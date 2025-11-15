@@ -1,0 +1,78 @@
+---
+title: "Spatial Transcriptomics Non-stationarity"
+author: "Puneet Velidi"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    fig_width: 10
+    fig_height: 6
+knitr:
+  opts_chunk: 
+    cache: true
+---
+
+```{r setup, include=FALSE}
+library(SpatialExperiment)
+library(ExperimentHub)
+library(ggplot2)
+library(gstat)
+eh <- ExperimentHub()
+```
+
+```{r load-datasets, cache=TRUE}
+visium_all <- query(eh, c("SpatialExperiment", "Visium"))
+visium_datasets <- lapply(seq_along(visium_all), function(i) visium_all[[i]])
+```
+
+```{r visualize}
+for (i in seq_along(visium_datasets)) {
+  spe <- visium_datasets[[i]]
+  gene_idx <- 100
+  rd <- rowData(spe)
+  gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+               if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+               gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+  cat("Dataset", i, "- Gene:", gene_name, "\n")
+
+  coords <- as.data.frame(spatialCoords(spe))
+  coords$expr <- log1p(counts(spe)[gene_idx, ])
+  colnames(coords)[1:2] <- c("x", "y")
+
+  eh_meta <- mcols(visium_all)[i, ]
+  title <- paste0(eh_meta$title, "\nSpecies: ", ifelse(is.na(eh_meta$species), "Unknown", eh_meta$species), " | Gene: ", gene_name)
+
+  print(ggplot(coords, aes(x, y, color = expr)) +
+    geom_point(size = 1, alpha = 0.9) +
+    scale_color_viridis_c(name = "log(expr+1)") +
+    labs(title = title) +
+    theme_minimal() +
+    coord_fixed())
+}
+```
+
+```{r covariograms}
+for (i in seq_along(visium_datasets)) {
+  spe <- visium_datasets[[i]]
+  gene_idx <- 100
+  rd <- rowData(spe)
+  gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+               if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+               gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+
+  coords <- as.data.frame(spatialCoords(spe))
+  coords$expr <- log1p(counts(spe)[gene_idx, ])
+  colnames(coords)[1:2] <- c("x", "y")
+
+  # Compute covariogram using gstat
+  v <- variogram(expr ~ 1, ~ x + y, coords)
+  v$covariance <- var(coords$expr) - v$gamma
+
+  eh_meta <- mcols(visium_all)[i, ]
+  print(ggplot(v, aes(dist, covariance)) +
+    geom_point() + geom_line() +
+    labs(title = paste0(eh_meta$title, " | Gene: ", gene_name), x = "Distance", y = "Covariance") +
+    theme_minimal())
+}
+```
