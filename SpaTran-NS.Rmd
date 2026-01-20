@@ -18,61 +18,1026 @@ library(SpatialExperiment)
 library(ExperimentHub)
 library(ggplot2)
 library(gstat)
+library(dplyr)
+library(tidyr)
+
+# Check INLA installation and load
+# Note: INLA requires restarting R after installation for binaries to load
+inla_available <- FALSE
+inla_error_msg <- NULL
+
+if (require("INLA", quietly = TRUE)) {
+  # Test INLA functionality - this will catch binary loading issues
+  tryCatch({
+    # Simple test to see if INLA binaries are loaded
+    test_result <- INLA::inla.mesh.1d(seq(0, 1, length.out = 5))
+    inla_available <- TRUE
+    cat("✓ INLA is properly installed and binaries are loaded.\n")
+  }, error = function(e) {
+    inla_error_msg <<- e$message
+    warning("⚠ INLA is installed but binaries are not loading properly.\n",
+            "Error: ", e$message, "\n",
+            "SOLUTION: Please RESTART R/RStudio completely and try again.\n",
+            "INLA requires a restart after installation for binaries to load.\n",
+            "The analysis functions will not work until INLA binaries are available.")
+  })
+} else {
+  warning("⚠ INLA package is not installed.\n",
+          "Please install it using:\n",
+          "install.packages('INLA', repos=c(getOption('repos'), INLA='https://inla.r-inla-download.org/R/stable'), dep=TRUE)\n",
+          "Then RESTART R/RStudio and try again.")
+}
+
+# Store INLA availability status for use in analysis functions
+assign(".inla_available", inla_available, envir = .GlobalEnv)
+
 eh <- ExperimentHub()
 ```
 
 ```{r load-datasets, cache=TRUE}
-visium_all <- query(eh, c("SpatialExperiment", "Visium"))
-visium_datasets <- lapply(seq_along(visium_all), function(i) visium_all[[i]])
+# Load datasets for analysis
+# Uncomment below to load multiple Visium datasets:
+#visium_all <- query(eh, c("SpatialExperiment", "Visium"))
+#visium_datasets <- lapply(seq_along(visium_all), function(i) visium_all[[i]])
+
+# Load Human Breast Cancer dataset as example
+# Note: This chunk queries for the dataset but doesn't extract it yet
+# The example-analysis chunk below shows how to properly load and use it
+visium_hbc <- query(eh, "HumanBreastCancerIDC")
+
+# Example: extract coordinates for a specific gene (if needed for visualization)
+# Uncomment below to use:
+# if (length(visium_hbc) > 0) {
+#   spe <- visium_hbc[[1]]
+#   if (inherits(spe, "SpatialExperiment")) {
+#     gene_idx <- 100
+#     coords <- as.data.frame(spatialCoords(spe))
+#     coords$expr <- log1p(counts(spe)[gene_idx, ])
+#     colnames(coords)[1:2] <- c("x", "y")
+#   }
+# }
 ```
 
-```{r visualize}
-for (i in seq_along(visium_datasets)) {
-  spe <- visium_datasets[[i]]
-  gene_idx <- 100
-  rd <- rowData(spe)
-  gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
-               if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
-               gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
-  cat("Dataset", i, "- Gene:", gene_name, "\n")
+```{r}
+# This chunk is for quick visualization/testing with a single gene
+# For the main analysis, use the analyze_multiple_genes() function below
+# Uncomment below to use:
+# if (exists("visium_hbc") && length(visium_hbc) > 0) {
+#   spe <- visium_hbc[[1]]
+#   if (inherits(spe, "SpatialExperiment")) {
+#     gene_idx <- 100
+#     coords <- as.data.frame(spatialCoords(spe))
+#     coords$expr <- log1p(counts(spe)[gene_idx, ])  # Select specific gene
+#     colnames(coords)[1:2] <- c("x", "y")
+#   }
+# }
+```
 
-  coords <- as.data.frame(spatialCoords(spe))
-  coords$expr <- log1p(counts(spe)[gene_idx, ])
-  colnames(coords)[1:2] <- c("x", "y")
+```{r visualize, eval=FALSE}
+# Visualization chunk - uncomment and modify if you want to visualize specific genes
+# This requires visium_datasets to be loaded (currently commented out above)
+# 
+# for (i in seq_along(visium_datasets)) {
+#   spe <- visium_datasets[[i]]
+#   gene_idx <- 100
+#   rd <- rowData(spe)
+#   gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+#                if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+#                gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+#   cat("Dataset", i, "- Gene:", gene_name, "\n")
+# 
+#   coords <- as.data.frame(spatialCoords(spe))
+#   coords$expr <- log1p(counts(spe)[gene_idx, ])
+#   colnames(coords)[1:2] <- c("x", "y")
+# 
+#   eh_meta <- mcols(visium_all)[i, ]
+#   title <- paste0(eh_meta$title, "\nSpecies: ", ifelse(is.na(eh_meta$species), "Unknown", eh_meta$species), " | Gene: ", gene_name)
+# 
+#   print(ggplot(coords, aes(x, y, color = expr)) +
+#     geom_point(size = 1, alpha = 0.9) +
+#     scale_color_viridis_c(name = "log(expr+1)") +
+#     labs(title = title) +
+#     theme_minimal() +
+#     coord_fixed())
+# }
 
-  eh_meta <- mcols(visium_all)[i, ]
-  title <- paste0(eh_meta$title, "\nSpecies: ", ifelse(is.na(eh_meta$species), "Unknown", eh_meta$species), " | Gene: ", gene_name)
+# Example visualization for current dataset (uncomment to use):
+# if (exists("spe")) {
+#   gene_idx <- 100
+#   rd <- rowData(spe)
+#   gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+#                if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+#                gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+#   
+#   coords <- as.data.frame(spatialCoords(spe))
+#   coords$expr <- log1p(counts(spe)[gene_idx, ])
+#   colnames(coords)[1:2] <- c("x", "y")
+#   
+#   print(ggplot(coords, aes(x, y, color = expr)) +
+#     geom_point(size = 1, alpha = 0.9) +
+#     scale_color_viridis_c(name = "log(expr+1)") +
+#     labs(title = paste("Gene:", gene_name)) +
+#     theme_minimal() +
+#     coord_fixed())
+# }
+```
 
-  print(ggplot(coords, aes(x, y, color = expr)) +
-    geom_point(size = 1, alpha = 0.9) +
-    scale_color_viridis_c(name = "log(expr+1)") +
-    labs(title = title) +
-    theme_minimal() +
-    coord_fixed())
+```{r covariograms, eval=FALSE}
+# Covariogram visualization chunk - uncomment and modify if needed
+# This requires visium_datasets to be loaded (currently commented out above)
+#
+# for (i in seq_along(visium_datasets)) {
+#   spe <- visium_datasets[[i]]
+#   gene_idx <- 100
+#   rd <- rowData(spe)
+#   gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+#                if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+#                gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+# 
+#   coords <- as.data.frame(spatialCoords(spe))
+#   coords$expr <- log1p(counts(spe)[gene_idx, ])
+#   colnames(coords)[1:2] <- c("x", "y")
+# 
+#   # Compute covariogram using gstat
+#   v <- variogram(expr ~ 1, ~ x + y, coords)
+#   v$covariance <- var(coords$expr) - v$gamma
+# 
+#   eh_meta <- mcols(visium_all)[i, ]
+#   print(ggplot(v, aes(dist, covariance)) +
+#     geom_point() + geom_line() +
+#     labs(title = paste0(eh_meta$title, " | Gene: ", gene_name), x = "Distance", y = "Covariance") +
+#     theme_minimal())
+# }
+
+# Example covariogram for current dataset (uncomment to use):
+# if (exists("spe")) {
+#   gene_idx <- 100
+#   rd <- rowData(spe)
+#   gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
+#                if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
+#                gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+#   
+#   coords <- as.data.frame(spatialCoords(spe))
+#   coords$expr <- log1p(counts(spe)[gene_idx, ])
+#   colnames(coords)[1:2] <- c("x", "y")
+#   
+#   # Compute covariogram using gstat
+#   v <- variogram(expr ~ 1, ~ x + y, coords)
+#   v$covariance <- var(coords$expr) - v$gamma
+#   
+#   print(ggplot(v, aes(dist, covariance)) +
+#     geom_point() + geom_line() +
+#     labs(title = paste("Gene:", gene_name), x = "Distance", y = "Covariance") +
+#     theme_minimal())
+# }
+```
+
+# Nonstationarity Analysis
+
+## ⚠️ IMPORTANT: INLA Installation on macOS Apple Silicon
+
+**The error "INLA installation error; no such file" is a known issue on macOS with Apple Silicon (M1/M2/M3).**
+
+## INLA Installation Troubleshooting
+
+### Solution 1: Install the TESTING version of INLA (Recommended for Apple Silicon)
+
+The stable version may not work on Apple Silicon. Use the **testing** version instead:
+
+```{r install-inla-testing, eval=FALSE}
+# Remove existing INLA installation
+remove.packages("INLA")
+
+# Install the TESTING version (has better Apple Silicon support)
+install.packages("INLA", 
+                 repos = c(getOption("repos"), 
+                          INLA = "https://inla.r-inla-download.org/R/testing"), 
+                 dep = TRUE)
+
+# RESTART R/RStudio after installation
+```
+
+### Solution 2: Create symbolic link for INLA binary (if Solution 1 doesn't work)
+
+Run these commands in your Terminal (not R):
+
+``` bash
+# Find your INLA installation path - adjust R version as needed
+cd ~/Library/R/arm64/4.4/library/INLA/bin/mac
+
+# Create symbolic link from arm64 binary to expected location
+mkdir -p 64bit
+ln -sf ../mac.arm64/inla 64bit/inla
+```
+
+Note: Adjust the path if your R library is in a different location. You can find it by running `.libPaths()` in R.
+
+### Solution 3: Verify installation
+
+After trying the above, restart R and test:
+
+```{r check-inla, eval=FALSE}
+# Check if INLA package is found
+packageVersion("INLA")
+
+# Try to load INLA
+library(INLA)
+
+# Test basic functionality
+test_coords <- matrix(c(0, 0, 1, 1, 0.5, 0.5), ncol = 2, byrow = TRUE)
+test_mesh <- INLA::inla.mesh.2d(loc = test_coords, max.edge = c(0.5, 1))
+cat("INLA is working!\n")
+```
+
+### Solution 4: Check INLA binary location
+
+If still having issues, check where INLA expects the binary:
+
+```{r debug-inla, eval=FALSE}
+# Find INLA package location
+system.file(package = "INLA")
+
+# List files in INLA bin directory
+list.files(file.path(system.file(package = "INLA"), "bin", "mac"), recursive = TRUE)
+```
+
+## Helper Functions
+
+### Normalization and Detrending
+
+```{r normalization-detrending-functions}
+# Function to normalize gene expression data
+normalize_expression <- function(expr, method = "quantile") {
+  if (method == "quantile") {
+    # Quantile normalization
+    expr_rank <- rank(expr, ties.method = "average")
+    expr_norm <- qnorm((expr_rank - 0.5) / length(expr))
+    return(expr_norm)
+  } else if (method == "zscore") {
+    # Z-score normalization
+    return((expr - mean(expr)) / sd(expr))
+  } else {
+    # Log-normalization (already done typically)
+    return(expr)
+  }
+}
+
+# Function to detrend gene expression data to remove large-scale spatial variability
+detrend_expression <- function(coords, expr, method = "polynomial") {
+  if (method == "loess") {
+    # Use loess smoothing to estimate and remove trend
+    loess_fit <- loess(expr ~ x + y, data = coords, span = 0.5)
+    trend <- predict(loess_fit, newdata = coords)
+    detrended <- expr - trend
+    return(list(detrended = detrended, trend = trend))
+  } else if (method == "polynomial") {
+    # Polynomial detrending
+    x_centered <- coords$x - mean(coords$x)
+    y_centered <- coords$y - mean(coords$y)
+    poly_fit <- lm(expr ~ x_centered + y_centered + 
+                   I(x_centered^2) + I(y_centered^2) + I(x_centered * y_centered),
+                   data = data.frame(expr = expr, x_centered = x_centered, y_centered = y_centered))
+    trend <- predict(poly_fit)
+    detrended <- expr - trend
+    return(list(detrended = detrended, trend = trend))
+  } else {
+    # No detrending
+    return(list(detrended = expr, trend = rep(0, length(expr))))
+  }
 }
 ```
 
-```{r covariograms}
-for (i in seq_along(visium_datasets)) {
-  spe <- visium_datasets[[i]]
-  gene_idx <- 100
-  rd <- rowData(spe)
-  gene_name <- if ("symbol" %in% colnames(rd)) rd$symbol[gene_idx] else
-               if ("gene_name" %in% colnames(rd)) rd$gene_name[gene_idx] else
-               gsub("ENS.*G[0-9]+|.*_", "", rownames(spe)[gene_idx])
+### INLA Spatial Modeling Functions
 
-  coords <- as.data.frame(spatialCoords(spe))
-  coords$expr <- log1p(counts(spe)[gene_idx, ])
-  colnames(coords)[1:2] <- c("x", "y")
+```{r inla-modeling-functions}
+# Function to create mesh for INLA SPDE
+create_spde_mesh <- function(coords, max.edge = NULL, cutoff = NULL) {
+  # Determine appropriate mesh parameters if not provided
+  if (is.null(max.edge)) {
+    # Use 1/3 of the range as max.edge
+    x_range <- diff(range(coords$x))
+    y_range <- diff(range(coords$y))
+    max_range <- max(x_range, y_range)
+    max.edge <- c(max_range / 5, max_range / 3)
+  }
+  
+  if (is.null(cutoff)) {
+    # Set cutoff to avoid too many small edges
+    x_range <- diff(range(coords$x))
+    y_range <- diff(range(coords$y))
+    min_range <- min(x_range, y_range)
+    cutoff <- min_range / 20
+  }
+  
+  # Create mesh
+  mesh <- inla.mesh.2d(
+    loc = as.matrix(coords[, c("x", "y")]),
+    max.edge = max.edge,
+    cutoff = cutoff
+  )
+  
+  return(mesh)
+}
 
-  # Compute covariogram using gstat
-  v <- variogram(expr ~ 1, ~ x + y, coords)
-  v$covariance <- var(coords$expr) - v$gamma
+# Function to fit stationary Matern model
+# Uses PC priors (inla.spde2.pcmatern) for consistent hyperparameter extraction
+fit_stationary_matern <- function(coords, expr, mesh = NULL, verbose = FALSE) {
+  if (is.null(mesh)) {
+    mesh <- create_spde_mesh(coords)
+  }
+  
+  # Create SPDE object with stationary Matern covariance using PC priors
+  # This gives us "Range for spatial" and "Stdev for spatial" hyperparameters
+  # which are easier to interpret than the theta parameterization
+  spde <- inla.spde2.pcmatern(
+    mesh = mesh,
+    alpha = 2,  # Smoothness parameter (alpha = nu + d/2, where nu=1 for Matern, d=2 for 2D)
+    prior.range = c(0.5, 0.5),  # P(range < 0.5) = 0.5 (weakly informative)
+    prior.sigma = c(1, 0.1)     # P(sigma > 1) = 0.1 (weakly informative)
+  )
+  
+  # Create A matrix for projection
+  A <- inla.spde.make.A(mesh = mesh, loc = as.matrix(coords[, c("x", "y")]))
+  
+  # Create index for spatial random effect
+  s.index <- inla.spde.make.index(name = "spatial", n.spde = spde$n.spde)
+  
+  # Create data stack
+  stack <- inla.stack(
+    data = list(y = expr),
+    A = list(A, 1),
+    effects = list(
+      s.index,
+      list(intercept = rep(1, length(expr)))
+    ),
+    tag = "est"
+  )
+  
+  # Formula: Y(s) = μ + b(s) + ε(s)
+  # This is the STATIONARY model - no spatial covariates, just intercept + spatial field
+  formula <- y ~ -1 + intercept + f(spatial, model = spde)
+  
+  # Fit model
+  result <- inla(
+    formula = formula,
+    data = inla.stack.data(stack, spde = spde),
+    family = "gaussian",
+    control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+    control.compute = list(config = TRUE, dic = TRUE, cpo = TRUE),
+    verbose = verbose
+  )
+  
+  return(list(result = result, mesh = mesh, spde = spde, stack = stack))
+}
 
-  eh_meta <- mcols(visium_all)[i, ]
-  print(ggplot(v, aes(dist, covariance)) +
-    geom_point() + geom_line() +
-    labs(title = paste0(eh_meta$title, " | Gene: ", gene_name), x = "Distance", y = "Covariance") +
-    theme_minimal())
+# Function to fit nonstationary Matern model
+fit_nonstationary_matern <- function(coords, expr, mesh = NULL, verbose = FALSE) {
+  if (is.null(mesh)) {
+    mesh <- create_spde_mesh(coords)
+  }
+  
+  # Create SPDE object with nonstationary Matern covariance
+  # For nonstationary model, we use inla.spde2.pcmatern with spatially varying parameters
+  # This requires specifying prior distributions for the range and variance parameters
+  
+  # Create nonstationary SPDE
+  # Using PC priors: P(range < range0) = alpha_range, P(sigma > sigma0) = alpha_sigma
+  spde <- inla.spde2.pcmatern(
+    mesh = mesh,
+    alpha = 2,  # Smoothness parameter (2 for Matern with smoothness 1)
+    prior.range = c(0.5, 0.5),  # P(range < 0.5) = 0.5
+    prior.sigma = c(1, 0.1)     # P(sigma > 1) = 0.1
+  )
+  
+  # For nonstationary model, we can make the range parameter spatially varying
+  # by using a log-Gaussian process for the range parameter
+  # This is more complex and requires additional setup
+  
+  # Alternative approach: Use a spatially varying variance model
+  # Create A matrix
+  A <- inla.spde.make.A(mesh = mesh, loc = as.matrix(coords[, c("x", "y")]))
+  
+  # Create index for spatial random effect
+  s.index <- inla.spde.make.index(name = "spatial", n.spde = spde$n.spde)
+  
+  # For nonstationary model, we can add spatial covariates or use a more flexible SPDE
+  # Here we use a model where the variance varies spatially
+  # One approach is to use a second spatial field for the log-variance
+  
+  # Create a second SPDE for the variance field
+  spde_var <- inla.spde2.pcmatern(
+    mesh = mesh,
+    alpha = 2,
+    prior.range = c(0.5, 0.5),
+    prior.sigma = c(0.5, 0.1)
+  )
+  
+  s.index_var <- inla.spde.make.index(name = "spatial_var", n.spde = spde_var$n.spde)
+  
+  # Create updated stack with variance field
+  stack_ns <- inla.stack(
+    data = list(y = expr),
+    A = list(A, A, 1),
+    effects = list(
+      s.index,
+      s.index_var,
+      list(intercept = rep(1, length(expr)))
+    ),
+    tag = "est"
+  )
+  
+  # Formula with spatially varying variance
+  # This is a simplified nonstationary model
+  # A full nonstationary model would require custom INLA code
+  formula <- y ~ -1 + intercept + 
+    f(spatial, model = spde) +
+    f(spatial_var, model = spde_var)
+  
+  # Fit model
+  result <- inla(
+    formula = formula,
+    data = inla.stack.data(stack_ns, spde = spde, spde_var = spde_var),
+    family = "gaussian",
+    control.predictor = list(A = inla.stack.A(stack_ns), compute = TRUE),
+    control.compute = list(config = TRUE, dic = TRUE, cpo = TRUE),
+    verbose = verbose
+  )
+  
+  return(list(result = result, mesh = mesh, spde = spde, spde_var = spde_var, stack = stack_ns))
+}
+
+# Alternative simpler nonstationary model using spatially varying range
+# This uses a more standard approach with spatially varying hyperparameters
+fit_nonstationary_matern_simple <- function(coords, expr, mesh = NULL, verbose = FALSE) {
+  if (is.null(mesh)) {
+    mesh <- create_spde_mesh(coords)
+  }
+  
+  # Create SPDE with spatially varying parameters
+  # We'll use a model where the range parameter varies with spatial location
+  # This is achieved by creating a covariate based on spatial coordinates
+  
+  # Create spatial covariates for nonstationarity
+  coords_scaled <- coords
+  coords_scaled$x_scaled <- scale(coords$x)[, 1]
+  coords_scaled$y_scaled <- scale(coords$y)[, 1]
+  
+  # Create SPDE
+  spde <- inla.spde2.pcmatern(
+    mesh = mesh,
+    alpha = 2,
+    prior.range = c(0.5, 0.5),
+    prior.sigma = c(1, 0.1)
+  )
+  
+  # Create A matrix
+  A <- inla.spde.make.A(mesh = mesh, loc = as.matrix(coords[, c("x", "y")]))
+  
+  # Create index for spatial random effect
+  s.index <- inla.spde.make.index(name = "spatial", n.spde = spde$n.spde)
+  
+  # Create data stack with spatial covariates
+  stack <- inla.stack(
+    data = list(y = expr),
+    A = list(A, 1),
+    effects = list(
+      s.index,
+      list(
+        intercept = rep(1, length(expr)),
+        x_scaled = coords_scaled$x_scaled,
+        y_scaled = coords_scaled$y_scaled,
+        x2 = coords_scaled$x_scaled^2,
+        y2 = coords_scaled$y_scaled^2,
+        xy = coords_scaled$x_scaled * coords_scaled$y_scaled
+      )
+    ),
+    tag = "est"
+  )
+  
+  # Formula with spatial covariates that can capture nonstationarity
+  # The interaction between spatial field and covariates creates nonstationarity
+  formula <- y ~ -1 + intercept + 
+    x_scaled + y_scaled + x2 + y2 + xy +
+    f(spatial, model = spde)
+  
+  # Fit model
+  result <- inla(
+    formula = formula,
+    data = inla.stack.data(stack, spde = spde),
+    family = "gaussian",
+    control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+    control.compute = list(config = TRUE, dic = TRUE, cpo = TRUE),
+    verbose = verbose
+  )
+  
+  return(list(result = result, mesh = mesh, spde = spde, stack = stack))
 }
 ```
+
+### Results Extraction Functions
+
+```{r results-extraction-functions}
+# Function to extract variance components and calculate spatial variability proportion
+extract_variance_components <- function(fit_result) {
+  # Extract hyperparameters
+  hyper <- fit_result$summary.hyperpar
+  
+  # For SPDE models with PC priors, the hyperparameters are:
+  # - "Range for spatial" (not precision)
+  # - "Stdev for spatial" (standard deviation, not precision)
+  # - "Precision for the Gaussian observations" (noise)
+  
+  # Initialize
+  sigma_b_sq <- NA
+  sigma_eps_sq <- NA
+  spatial_range <- NA
+  
+  # Try to find spatial Stdev (from PC prior SPDE models)
+  stdev_idx <- grep("Stdev for spatial", rownames(hyper), ignore.case = TRUE)
+  if (length(stdev_idx) > 0) {
+    spatial_stdev <- hyper$mean[stdev_idx[1]]
+    sigma_b_sq <- spatial_stdev^2  # Variance = Stdev^2
+  } else {
+    # Try alternative: Precision-based models
+    spatial_prec_idx <- grep("Precision for spatial", rownames(hyper))
+    if (length(spatial_prec_idx) > 0) {
+      spatial_prec <- hyper$mean[spatial_prec_idx]
+      sigma_b_sq <- 1 / spatial_prec
+    } else {
+      # Try any precision with "spatial" in name
+      spatial_prec_idx <- grep("Precision.*spatial", rownames(hyper), ignore.case = TRUE)
+      if (length(spatial_prec_idx) > 0) {
+        spatial_prec <- hyper$mean[spatial_prec_idx[1]]
+        sigma_b_sq <- 1 / spatial_prec
+      }
+    }
+  }
+  
+  # Extract range parameter (useful for interpretation)
+  range_idx <- grep("Range for spatial", rownames(hyper), ignore.case = TRUE)
+  if (length(range_idx) > 0) {
+    spatial_range <- hyper$mean[range_idx[1]]
+  }
+  
+  # Find noise variance (Precision for the Gaussian observations)
+  noise_prec_idx <- grep("Precision for the Gaussian observations", rownames(hyper))
+  if (length(noise_prec_idx) > 0) {
+    noise_prec <- hyper$mean[noise_prec_idx]
+    sigma_eps_sq <- 1 / noise_prec
+  } else {
+    # Try alternative names
+    noise_prec_idx <- grep("Precision.*Gaussian|Precision.*observations", rownames(hyper), ignore.case = TRUE)
+    if (length(noise_prec_idx) > 0) {
+      noise_prec <- hyper$mean[noise_prec_idx[1]]
+      sigma_eps_sq <- 1 / noise_prec
+    } else {
+      sigma_eps_sq <- NA
+    }
+  }
+  
+  # Calculate proportion of spatial variability
+  if (!is.na(sigma_b_sq) && !is.na(sigma_eps_sq)) {
+    prop_spatial <- sigma_b_sq / (sigma_b_sq + sigma_eps_sq)
+  } else {
+    prop_spatial <- NA
+  }
+  
+  # Extract marginal likelihood (log)
+  log_ml <- fit_result$mlik[1, 1]  # Integrated log-likelihood
+  
+  return(list(
+    sigma_b_sq = sigma_b_sq,
+    sigma_eps_sq = sigma_eps_sq,
+    spatial_range = spatial_range,
+    prop_spatial = prop_spatial,
+    log_marginal_likelihood = log_ml,
+    hyperparameters = hyper
+  ))
+}
+
+```
+
+## Statistical Models and Bayes Factor
+
+### Model Specification
+
+For each gene, we fit two spatial models of the form:
+
+$$Y(s) = \mu + b(s) + \epsilon(s)$$
+
+where:
+
+-   $Y(s)$ is the (normalized, detrended) gene expression at spatial location $s$
+-   $\mu$ is the overall mean (intercept)
+-   $b(s)$ is a spatial random effect modeled as a Gaussian process with Matérn covariance
+-   $\epsilon(s) \sim N(0, \sigma_\epsilon^2)$ is iid noise (nugget effect)
+
+The spatial effect $b(s)$ is specified as a Whittle-Matérn field via the SPDE approach:
+
+$$b(s) \sim \text{GaussianProcess}(0, C_\theta(s, s'))$$
+
+where $C_\theta$ is the Matérn covariance function with parameters $\theta = (\rho, \sigma_b)$:
+
+-   $\rho$ = spatial range (correlation length scale)
+-   $\sigma_b^2$ = marginal variance of the spatial field
+
+**Stationary Model (**$M_0$): The covariance parameters $(\rho, \sigma_b)$ are constant across space.
+
+**Nonstationary Model (**$M_1$): The model includes spatial polynomial covariates $(x, y, x^2, y^2, xy)$ that allow the mean structure to vary spatially, capturing large-scale nonstationarity.
+
+### Variance Components
+
+The **proportion of spatial variability** quantifies how much of the total variance is due to spatial structure:
+
+$$\text{Proportion Spatial} = \frac{\sigma_b^2}{\sigma_b^2 + \sigma_\epsilon^2}$$
+
+where:
+
+-   $\sigma_b^2$ = variance of the spatial effect (from the Matérn field)
+-   $\sigma_\epsilon^2$ = variance of the noise/nugget effect
+
+### Bayes Factor Calculation
+
+INLA provides the **marginal likelihood** $p(Y | M)$ for each model via integrated nested Laplace approximation. The Bayes factor comparing the nonstationary model ($M_1$) to the stationary model ($M_0$) is:
+
+$$BF_{10} = \frac{p(Y | M_1)}{p(Y | M_0)}$$
+
+Taking logarithms:
+
+$$\log BF_{10} = \log p(Y | M_1) - \log p(Y | M_0)$$
+
+**Interpretation:**
+
+-   $\log BF_{10} > 0$ (equivalently $BF_{10} > 1$): Evidence favors nonstationary model
+-   $\log BF_{10} < 0$ (equivalently $BF_{10} < 1$): Evidence favors stationary model
+-   $|\log BF_{10}| > 1$: Substantial evidence
+-   $|\log BF_{10}| > 2.3$ (i.e., $BF > 10$): Strong evidence
+-   $|\log BF_{10}| > 4.6$ (i.e., $BF > 100$): Decisive evidence
+
+### Bayes Factor Function
+
+```{r bayes-factor-function}
+# Function to calculate Bayes factor from marginal likelihoods
+# 
+# The Bayes factor is:
+#   BF_10 = p(Y | M_nonstationary) / p(Y | M_stationary)
+#         = exp(log_ml_nonstationary - log_ml_stationary)
+#
+# log(BF_10) = log p(Y | M_1) - log p(Y | M_0)
+#
+# Interpretation:
+#   BF > 1 (log BF > 0): Favors nonstationary model
+#   BF < 1 (log BF < 0): Favors stationary model
+
+calculate_bayes_factor <- function(log_ml_stationary, log_ml_nonstationary) {
+  # Log Bayes factor: log(BF_10) = log p(Y|M_1) - log p(Y|M_0)
+  log_bf <- log_ml_nonstationary - log_ml_stationary
+  
+  # Bayes factor on original scale
+  bf <- exp(log_bf)
+  
+  # Interpretation based on Kass & Raftery (1995) guidelines
+  interpretation <- case_when(
+    log_bf > 4.6 ~ "Decisive for nonstationary",
+    log_bf > 2.3 ~ "Strong for nonstationary",
+    log_bf > 1.0 ~ "Substantial for nonstationary",
+    log_bf > 0 ~ "Weak for nonstationary",
+    log_bf > -1.0 ~ "Weak for stationary",
+    log_bf > -2.3 ~ "Substantial for stationary",
+    log_bf > -4.6 ~ "Strong for stationary",
+    TRUE ~ "Decisive for stationary"
+  )
+  
+  return(list(
+    log_bayes_factor = log_bf,
+    bayes_factor = bf,
+    interpretation = interpretation
+  ))
+}
+```
+
+### Main Analysis Function
+
+```{r main-analysis-function}
+# Function to analyze a single gene
+analyze_gene_nonstationarity <- function(coords, expr, gene_name = NULL, 
+                                         normalize = TRUE, detrend = TRUE,
+                                         detrend_method = "loess",
+                                         verbose = FALSE) {
+  
+  # Check INLA availability
+  if (!exists(".inla_available") || !get(".inla_available")) {
+    if (!require("INLA", quietly = TRUE)) {
+      stop("INLA package is required but not installed. Please install it using:\n",
+           "install.packages('INLA', repos=c(getOption('repos'), INLA='https://inla.r-inla-download.org/R/stable'), dep=TRUE)\n",
+           "Then RESTART R/RStudio and try again.")
+    }
+    # Test if binaries are loaded
+    tryCatch({
+      INLA::inla.mesh.1d(seq(0, 1, length.out = 5))
+    }, error = function(e) {
+      stop("INLA is installed but binaries are not loading. Error: ", e$message, "\n",
+           "SOLUTION: Please RESTART R/RStudio completely. INLA requires a restart after installation.")
+    })
+  }
+  
+  # Step 1: Normalize expression
+  if (normalize) {
+    expr_processed <- normalize_expression(expr, method = "quantile")
+  } else {
+    expr_processed <- expr
+  }
+  
+  # Step 2: Detrend expression
+  if (detrend) {
+    detrend_result <- detrend_expression(coords, expr_processed, method = detrend_method)
+    expr_processed <- detrend_result$detrended
+  }
+  
+  # Create mesh (shared between models)
+  mesh <- create_spde_mesh(coords)
+  
+  # Step 3: Fit stationary model
+  if (verbose) cat("Fitting stationary model...\n")
+  fit_stationary <- fit_stationary_matern(coords, expr_processed, mesh = mesh, verbose = verbose)
+  
+  # Step 4: Fit nonstationary model
+  if (verbose) cat("Fitting nonstationary model...\n")
+  fit_nonstationary <- fit_nonstationary_matern_simple(coords, expr_processed, mesh = mesh, verbose = verbose)
+  
+  # Step 5: Extract results
+  results_stationary <- extract_variance_components(fit_stationary$result)
+  results_nonstationary <- extract_variance_components(fit_nonstationary$result)
+  
+  # Step 6: Calculate Bayes factor
+  bf_result <- calculate_bayes_factor(
+    results_stationary$log_marginal_likelihood,
+    results_nonstationary$log_marginal_likelihood
+  )
+  
+  # Compile results
+  results <- data.frame(
+    gene_name = ifelse(is.null(gene_name), "unknown", gene_name),
+    # Stationary model results
+    sigma_b_sq_stationary = results_stationary$sigma_b_sq,
+    sigma_eps_sq_stationary = results_stationary$sigma_eps_sq,
+    range_stationary = results_stationary$spatial_range,
+    prop_spatial_stationary = results_stationary$prop_spatial,
+    log_ml_stationary = results_stationary$log_marginal_likelihood,
+    # Nonstationary model results
+    sigma_b_sq_nonstationary = results_nonstationary$sigma_b_sq,
+    sigma_eps_sq_nonstationary = results_nonstationary$sigma_eps_sq,
+    range_nonstationary = results_nonstationary$spatial_range,
+    prop_spatial_nonstationary = results_nonstationary$prop_spatial,
+    log_ml_nonstationary = results_nonstationary$log_marginal_likelihood,
+    # Bayes factor: log(BF_10) = log p(Y|M_1) - log p(Y|M_0)
+    log_bayes_factor = bf_result$log_bayes_factor,
+    bayes_factor = bf_result$bayes_factor,
+    bf_interpretation = bf_result$interpretation,
+    stringsAsFactors = FALSE
+  )
+  
+  return(list(
+    results = results,
+    fits = list(
+      stationary = fit_stationary,
+      nonstationary = fit_nonstationary
+    )
+  ))
+}
+
+# Function to analyze multiple genes
+analyze_multiple_genes <- function(spe, gene_indices, normalize = TRUE, 
+                                   detrend = TRUE, detrend_method = "loess",
+                                   verbose = FALSE) {
+  
+  # Check INLA availability
+  if (!exists(".inla_available") || !get(".inla_available")) {
+    if (!require("INLA", quietly = TRUE)) {
+      stop("INLA package is required but not installed. Please install it using:\n",
+           "install.packages('INLA', repos=c(getOption('repos'), INLA='https://inla.r-inla-download.org/R/stable'), dep=TRUE)\n",
+           "Then RESTART R/RStudio and try again.")
+    }
+    # Test if binaries are loaded
+    tryCatch({
+      INLA::inla.mesh.1d(seq(0, 1, length.out = 5))
+    }, error = function(e) {
+      stop("INLA is installed but binaries are not loading. Error: ", e$message, "\n",
+           "SOLUTION: Please RESTART R/RStudio completely. INLA requires a restart after installation.")
+    })
+  }
+  
+  # Get coordinates
+  coords <- as.data.frame(spatialCoords(spe))
+  colnames(coords)[1:2] <- c("x", "y")
+  
+  # Get gene names
+  rd <- rowData(spe)
+  gene_names <- if ("symbol" %in% colnames(rd)) {
+    rd$symbol[gene_indices]
+  } else if ("gene_name" %in% colnames(rd)) {
+    rd$gene_name[gene_indices]
+  } else {
+    rownames(spe)[gene_indices]
+  }
+  
+  # Initialize results list
+  all_results <- list()
+  results_df <- data.frame()
+  
+  # Process each gene
+  for (i in seq_along(gene_indices)) {
+    gene_idx <- gene_indices[i]
+    gene_name <- gene_names[i]
+    
+    if (verbose) {
+      cat(sprintf("Processing gene %d/%d: %s\n", i, length(gene_indices), gene_name))
+    }
+    
+    # Get expression
+    expr <- log1p(counts(spe)[gene_idx, ])
+    
+    # Analyze gene
+    tryCatch({
+      analysis_result <- analyze_gene_nonstationarity(
+        coords = coords,
+        expr = expr,
+        gene_name = gene_name,
+        normalize = normalize,
+        detrend = detrend,
+        detrend_method = detrend_method,
+        verbose = verbose
+      )
+      
+      # Store results
+      all_results[[gene_name]] <- analysis_result
+      results_df <- rbind(results_df, analysis_result$results)
+      
+    }, error = function(e) {
+      warning(sprintf("Error analyzing gene %s: %s\n", gene_name, e$message))
+      # Add NA row for failed gene (must match columns in results dataframe)
+      na_row <- data.frame(
+        gene_name = gene_name,
+        sigma_b_sq_stationary = NA_real_,
+        sigma_eps_sq_stationary = NA_real_,
+        range_stationary = NA_real_,
+        prop_spatial_stationary = NA_real_,
+        log_ml_stationary = NA_real_,
+        sigma_b_sq_nonstationary = NA_real_,
+        sigma_eps_sq_nonstationary = NA_real_,
+        range_nonstationary = NA_real_,
+        prop_spatial_nonstationary = NA_real_,
+        log_ml_nonstationary = NA_real_,
+        log_bayes_factor = NA_real_,
+        bayes_factor = NA_real_,
+        bf_interpretation = NA_character_,
+        stringsAsFactors = FALSE
+      )
+      results_df <<- rbind(results_df, na_row)
+    })
+  }
+  
+  # Reset row names to be sequential
+  if (nrow(results_df) > 0) {
+    rownames(results_df) <- 1:nrow(results_df)
+  }
+  
+  return(list(
+    results_df = results_df,
+    detailed_results = all_results
+  ))
+}
+```
+
+## Example Analysis
+
+```{r example-analysis}
+# Load example dataset
+# Query ExperimentHub for the dataset
+visium_hbc <- query(eh, "HumanBreastCancerIDC")
+
+# Check what we got
+if (length(visium_hbc) == 0) {
+  stop("No datasets found matching 'HumanBreastCancerIDC'. Please check the dataset name.")
+}
+
+# Extract the SpatialExperiment object
+# The [[1]] accesses the first (and typically only) resource
+spe <- visium_hbc[[1]]
+
+# Verify it's a SpatialExperiment object
+if (!inherits(spe, "SpatialExperiment")) {
+  stop("Expected SpatialExperiment object, but got: ", class(spe))
+}
+
+# Select genes with actual expression (not the first genes which are often non-expressed)
+# Calculate total expression per gene and select top expressed genes
+gene_totals <- Matrix::rowSums(counts(spe))
+# Get indices of genes with highest expression
+top_genes <- order(gene_totals, decreasing = TRUE)
+
+# Select top 10 expressed genes for testing
+n_genes <- 10
+gene_indices <- top_genes[1:n_genes]
+
+# Show which genes we're analyzing
+rd <- rowData(spe)
+gene_names <- if ("symbol" %in% colnames(rd)) {
+  rd$symbol[gene_indices]
+} else if ("gene_name" %in% colnames(rd)) {
+  rd$gene_name[gene_indices]
+} else {
+  rownames(spe)[gene_indices]
+}
+cat("Analyzing top expressed genes:\n")
+print(data.frame(index = gene_indices, name = gene_names, total_counts = gene_totals[gene_indices]))
+
+# Run analysis
+analysis_results <- analyze_multiple_genes(
+  spe = spe,
+  gene_indices = gene_indices,
+  normalize = TRUE,
+  detrend = TRUE,
+  detrend_method = "loess",
+  verbose = TRUE
+)
+
+# Display results
+print(analysis_results$results_df)
+```
+
+```{r}
+analysis_results$results_df[,c("gene_name","log_bayes_factor","bf_interpretation")]
+```
+
+## Results Summary
+
+```{r results-summary}
+# Summary statistics
+summary_stats <- analysis_results$results_df %>%
+  summarise(
+    n_genes = n(),
+    n_successful = sum(!is.na(bayes_factor)),
+    prop_favor_nonstationary = mean(favors_nonstationary, na.rm = TRUE),
+    mean_log_bf = mean(log_bayes_factor, na.rm = TRUE),
+    median_log_bf = median(log_bayes_factor, na.rm = TRUE),
+    mean_prop_spatial_stationary = mean(prop_spatial_stationary, na.rm = TRUE),
+    mean_prop_spatial_nonstationary = mean(prop_spatial_nonstationary, na.rm = TRUE),
+    mean_diff_prop_spatial = mean(prop_spatial_nonstationary - prop_spatial_stationary, na.rm = TRUE)
+  )
+
+print(summary_stats)
+
+# Distribution of Bayes factors
+ggplot(analysis_results$results_df, aes(x = log_bayes_factor)) +
+  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Distribution of Log Bayes Factors",
+    subtitle = "Positive values favor nonstationary model",
+    x = "Log Bayes Factor",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+# Comparison of spatial variability proportions
+comparison_df <- analysis_results$results_df %>%
+  select(gene_name, prop_spatial_stationary, prop_spatial_nonstationary) %>%
+  pivot_longer(
+    cols = c(prop_spatial_stationary, prop_spatial_nonstationary),
+    names_to = "model_type",
+    values_to = "prop_spatial"
+  ) %>%
+  mutate(model_type = ifelse(model_type == "prop_spatial_stationary", 
+                             "Stationary", "Nonstationary"))
+
+ggplot(comparison_df, aes(x = model_type, y = prop_spatial, fill = model_type)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("Stationary" = "steelblue", "Nonstationary" = "coral")) +
+  labs(
+    title = "Comparison of Spatial Variability Proportions",
+    subtitle = "Stationary vs Nonstationary Models",
+    x = "Model Type",
+    y = "Proportion of Spatial Variability"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## Notes on Implementation
+
+The code above implements the analysis framework described. Key points:
+
+1.  **Normalization**: Quantile normalization is used by default to make gene expression comparable across genes.
+
+2.  **Detrending**: Loess smoothing is used to remove large-scale spatial trends before modeling the residual spatial structure.
+
+3.  **Stationary Model**: Uses a standard Matern SPDE model with constant covariance parameters.
+
+4.  **Nonstationary Model**: Uses a simplified approach where spatial covariates interact with the spatial field to capture nonstationarity. For a fully nonstationary Matern model with spatially varying range and variance parameters, more advanced INLA techniques would be needed (see INLA documentation on nonstationary SPDE models).
+
+5.  **Bayes Factor**: Calculated from the marginal likelihoods provided by INLA to compare stationary vs nonstationary models.
+
+6.  **Spatial Variability Proportion**: Calculated as σ_b²/(σ_b² + σ_ε²) for both models.
+
+The results can be summarized across genes, datasets, tissue types, and gene groups as needed for the research questions.
