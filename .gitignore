@@ -3,3 +3,8 @@
 *.RData
 *.Ruserdata
 *.RDataTmp
+/SpaTran-NS_cache/
+/hpc/logs/
+/hpc/results/
+/hpc/data/
+/hpc/results/
