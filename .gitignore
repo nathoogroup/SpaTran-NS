@@ -3,9 +3,10 @@
 *.RData
 *.Ruserdata
 *.RDataTmp
+*.rds
 /SpaTran-NS_cache/
 /hpc/logs/
 /hpc/results/
 /hpc/data/
-/hpc/results/
+logs/
 .Rproj.user
