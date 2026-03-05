@@ -7,65 +7,47 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --partition=standard
+#SBATCH --account=def-nathoo
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --mail-user=your_email@example.com
+#SBATCH --mail-user=pvelidi@uvic.ca
 
 # =============================================================================
 # Download SpatialExperiment Datasets - SBATCH Submission Script
 # =============================================================================
-# Submit with: sbatch submit_download.sbatch
+# Submit with: sbatch hpc/submit_download.sbatch
 #
-# This downloads all SpatialExperiment datasets from ExperimentHub
-# Run this BEFORE running the main analysis
+# Run this BEFORE the analysis job.
+# No INLA needed here; only Bioconductor packages.
 # =============================================================================
 
 echo "=========================================="
 echo "Download job started at: $(date)"
-echo "Job ID: $SLURM_JOB_ID"
-echo "Node: $SLURM_NODELIST"
+echo "Job ID:  $SLURM_JOB_ID"
+echo "Node:    $SLURM_NODELIST"
 echo "=========================================="
 
-# Create logs directory
 mkdir -p logs
 
-# Set up environment
-# Load R module (modify version as needed for your HPC)
-module load StdEnv/2023 r/4.5.0
+# Download only needs ExperimentHub + SpatialExperiment — covered by the
+# Bioconductor bundle module; no user library or INLA modules required.
+module load StdEnv/2023 gcc/12.3 r/4.4.0 geos/3.12.0 gdal/3.9.1 udunits/2.2.28 \
+            r-bundle-bioconductor/3.20
 
-# Set R library path
-export R_LIBS=~/.local/R/$EBVERSIONR/
+cd "$SLURM_SUBMIT_DIR"
 
-# Set working directory
-cd $SLURM_SUBMIT_DIR
-
-# Configuration
 OUTPUT_DIR="data/spatial_datasets"
-
-# Create output directory
 mkdir -p "$OUTPUT_DIR"
 
-echo ""
-echo "Downloading datasets to: $OUTPUT_DIR"
-echo ""
-
-# Run download script
+echo "Downloading SpatialExperiment datasets to: $OUTPUT_DIR"
 Rscript hpc/download_datasets.R "$OUTPUT_DIR"
 
-# Check exit status
 EXIT_STATUS=$?
-
-echo ""
 echo "=========================================="
 if [ $EXIT_STATUS -eq 0 ]; then
     echo "Download completed successfully at: $(date)"
-    echo "Datasets saved to: $OUTPUT_DIR"
-    echo ""
-    echo "To run the analysis, submit:"
-    echo "  sbatch hpc/submit_analysis.sbatch"
+    echo "Next step: sbatch hpc/submit_analysis.sbatch"
 else
-    echo "Download failed with exit code $EXIT_STATUS at: $(date)"
+    echo "Download FAILED (exit $EXIT_STATUS) at: $(date)"
 fi
 echo "=========================================="
-
 exit $EXIT_STATUS

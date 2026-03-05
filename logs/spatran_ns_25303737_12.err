@@ -1,0 +1,19 @@
+Lmod Warning:
+-------------------------------------------------------------------------------
+The following dependent module(s) are not currently loaded: boost/1.82.0
+(required by: armadillo/12.6.4)
+-------------------------------------------------------------------------------
+
+
+
+Warning message:
+`inla.mesh.1d()` was deprecated in INLA 23.08.18.
+ℹ Please use `fmesher::fm_mesh_1d()` instead.
+ℹ For more information, see
+  https://inlabru-org.github.io/fmesher/articles/inla_conversion.html
+ℹ To silence these deprecation messages in old legacy code, set
+  `inla.setOption(fmesher.evolution.warn = FALSE)`.
+ℹ To ensure visibility of these messages in package tests, also set
+  `inla.setOption(fmesher.evolution.verbosity = 'warn')`. 
+/localscratch/spool/slurmd/job25304719/slurm_script: line 68: 282645 Killed                  Rscript hpc/run_analysis.R "$DATA_DIR" "$OUTPUT_DIR" "$N_CORES"
+slurmstepd: error: Detected 1 oom_kill event in StepId=25304719.batch. Some of the step tasks have been OOM Killed.

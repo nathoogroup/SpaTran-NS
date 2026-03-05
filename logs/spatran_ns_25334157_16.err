@@ -1,0 +1,54 @@
+Lmod Warning:
+-------------------------------------------------------------------------------
+The following dependent module(s) are not currently loaded: boost/1.82.0
+(required by: armadillo/12.6.4)
+-------------------------------------------------------------------------------
+
+
+
+Warning message:
+`inla.mesh.1d()` was deprecated in INLA 23.08.18.
+ℹ Please use `fmesher::fm_mesh_1d()` instead.
+ℹ For more information, see
+  https://inlabru-org.github.io/fmesher/articles/inla_conversion.html
+ℹ To silence these deprecation messages in old legacy code, set
+  `inla.setOption(fmesher.evolution.warn = FALSE)`.
+ℹ To ensure visibility of these messages in package tests, also set
+  `inla.setOption(fmesher.evolution.verbosity = 'warn')`. 
+
+
+	GitId: "devel"
+	Error:12 Reason: The Newton-Raphson optimizer did not converge
+	Message: Condition `lambda < 1.0 / lambda_lim' is not TRUE
+	Line:1021 Function: GMRFLib_init_GMRF_approximation_store__intern
+
+
+
+	GitId: "devel"
+	Error:12 Reason: The Newton-Raphson optimizer did not converge
+	Message: Condition `lambda < 1.0 / lambda_lim' is not TRUE
+	Line:1021 Function: GMRFLib_init_GMRF_approximation_store__intern
+
+
+
+	GitId: "devel"
+	Error:12 Reason: The Newton-Raphson optimizer did not converge
+	Message: Condition `lambda < 1.0 / lambda_lim' is not TRUE
+	Line:1021 Function: GMRFLib_init_GMRF_approximation_store__intern
+
+
+
+	GitId: "devel"
+	Error:12 Reason: The Newton-Raphson optimizer did not converge
+	Message: Condition `lambda < 1.0 / lambda_lim' is not TRUE
+	Line:1021 Function: GMRFLib_init_GMRF_approximation_store__intern
+
+Warning message:
+`inla.mesh.2d()` was deprecated in INLA 23.08.18.
+ℹ Please use `fmesher::fm_mesh_2d_inla()` instead.
+ℹ For more information, see
+  https://inlabru-org.github.io/fmesher/articles/inla_conversion.html
+ℹ To silence these deprecation messages in old legacy code, set
+  `inla.setOption(fmesher.evolution.warn = FALSE)`.
+ℹ To ensure visibility of these messages in package tests, also set
+  `inla.setOption(fmesher.evolution.verbosity = 'warn')`. 

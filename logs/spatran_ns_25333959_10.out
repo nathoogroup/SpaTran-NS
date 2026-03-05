@@ -1,0 +1,87 @@
+==========================================
+Array job started at:   Mon Mar  2 06:20:03 PM PST 2026
+Array job ID:           25333959
+Array task ID:          10
+Node:                   fc30659
+CPUs:                   8
+==========================================
+
+Configuration:
+  Data directory:   data/spatial_datasets
+  Output directory: results
+  Cores:            8
+  Dataset index:    10
+
+=============================================================
+Spatial Nonstationarity Analysis - HPC Parallel Processing
+=============================================================
+Data directory:    data/spatial_datasets 
+Output directory:  results 
+Cores:             8 
+Gene selection:    all expressed genes (after quality filter)
+SLURM array task:  10 
+Start time:        2026-03-02 18:20:04 
+=============================================================
+
+Loading packages...
+Loading analysis functions...
+Analysis functions loaded.
+Testing INLA...
+INLA OK
+
+Found 18 unique dataset files (v3.13 duplicates excluded)
+Array mode: processing dataset 10 of 18 
+
+Setting up 8 parallel workers...
+[[1]]
+NULL
+
+[[2]]
+NULL
+
+[[3]]
+NULL
+
+[[4]]
+NULL
+
+[[5]]
+NULL
+
+[[6]]
+NULL
+
+[[7]]
+NULL
+
+[[8]]
+NULL
+
+
+============================================================
+Dataset 1 / 1 : Janesick_breastCancer_Visium 
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+  Genes: 18085, Spots: 4992
+  ERROR reading counts (HDF5-backed assay with missing backing file?):
+   'assay(<SpatialExperiment>, i="character", ...)' invalid subscript 'i'
+invalid class “DelayedSetDimnames” object: 
+    the supplied seed must support extract_array() 
+
+============================================================
+Combining results across all datasets...
+Saved combined results to: results 
+
+============================================================
+ANALYSIS SUMMARY
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+Datasets processed: 0 
+Total genes:        
+Successful fits:    0 
+Failed fits:        0 
+
+End time: 2026-03-02 18:20:28 
+Done!
+
+==========================================
+Task 10 completed successfully at: Mon Mar  2 06:20:28 PM PST 2026
+==========================================

@@ -1,0 +1,84 @@
+==========================================
+Array job started at:   Mon Mar  2 12:55:13 PM PST 2026
+Array job ID:           25313707
+Array task ID:          15
+Node:                   fc30629
+CPUs:                   8
+==========================================
+
+Configuration:
+  Data directory:   data/spatial_datasets
+  Output directory: results
+  Cores:            8
+  Dataset index:    15
+
+=============================================================
+Spatial Nonstationarity Analysis - HPC Parallel Processing
+=============================================================
+Data directory:    data/spatial_datasets 
+Output directory:  results 
+Cores:             8 
+Gene selection:    all expressed genes (after quality filter)
+SLURM array task:  15 
+Start time:        2026-03-02 12:55:14 
+=============================================================
+
+Loading packages...
+Loading analysis functions...
+Analysis functions loaded.
+Testing INLA...
+INLA OK
+
+Found 18 unique dataset files (v3.13 duplicates excluded)
+Array mode: processing dataset 15 of 18 
+
+Setting up 8 parallel workers...
+[[1]]
+NULL
+
+[[2]]
+NULL
+
+[[3]]
+NULL
+
+[[4]]
+NULL
+
+[[5]]
+NULL
+
+[[6]]
+NULL
+
+[[7]]
+NULL
+
+[[8]]
+NULL
+
+
+============================================================
+Dataset 1 / 1 : spe 
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+  ERROR loading: error reading from connection 
+  Skipping (not a SpatialExperiment)
+
+============================================================
+Combining results across all datasets...
+Saved combined results to: results 
+
+============================================================
+ANALYSIS SUMMARY
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+Datasets processed: 0 
+Total genes:        
+Successful fits:    0 
+Failed fits:        0 
+
+End time: 2026-03-02 12:56:13 
+Done!
+
+==========================================
+Task 15 completed successfully at: Mon Mar  2 12:56:13 PM PST 2026
+==========================================

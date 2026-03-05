@@ -1,0 +1,405 @@
+=== 10x Visium SpatialExperiment Dataset Downloader ===
+Output directory: data/spatial_datasets 
+
+Querying ExperimentHub for 10x Visium SpatialExperiment datasets...
+Found 32 Visium SpatialExperiment datasets
+
+Dataset manifest:
+  [EH6695] HumanBreastCancerIDC
+  [EH6696] HumanBreastCancerILC
+  [EH6697] HumanCerebellum
+  [EH6698] HumanColorectalCancer
+  [EH6699] HumanGlioblastoma
+  [EH6700] HumanHeart
+  [EH6701] HumanLymphNode
+  [EH6702] HumanOvarianCancer
+  [EH6703] HumanSpinalCord
+  [EH6704] MouseBrainCoronal
+  [EH6705] MouseBrainSagittalPosterior
+  [EH6706] MouseBrainSagittalAnterior
+  [EH6707] MouseKidneyCoronal
+  [EH6731] HumanBreastCancerIDC_v3.13
+  [EH6732] HumanBreastCancerILC_v3.13
+  [EH6733] HumanCerebellum_v3.13
+  [EH6734] HumanColorectalCancer_v3.13
+  [EH6735] HumanGlioblastoma_v3.13
+  [EH6736] HumanHeart_v3.13
+  [EH6737] HumanLymphNode_v3.13
+  [EH6738] HumanOvarianCancer_v3.13
+  [EH6739] HumanSpinalCord_v3.13
+  [EH6740] MouseBrainCoronal_v3.13
+  [EH6741] MouseBrainSagittalPosterior_v3.13
+  [EH6742] MouseBrainSagittalAnterior_v3.13
+  [EH6743] MouseKidneyCoronal_v3.13
+  [EH7737] WeberDivechaLCdata_Visium
+  [EH7738] WeberDivechaLCdata_singleNucleus
+  [EH9516] Visium_humanDLPFC
+  [EH9517] Visium_mouseCoronal
+  [EH9522] Janesick_breastCancer_Visium
+  [EH9605] spe
+
+Saved dataset manifest to: data/spatial_datasets/dataset_manifest.csv 
+
+Downloading datasets...
+==================================================
+
+[1/32] HumanBreastCancerIDC
+  EH ID: EH6695 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 7785
+  Saving to: data/spatial_datasets/HumanBreastCancerIDC.rds 
+  SUCCESS
+
+[2/32] HumanBreastCancerILC
+  EH ID: EH6696 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4325
+  Saving to: data/spatial_datasets/HumanBreastCancerILC.rds 
+  SUCCESS
+
+[3/32] HumanCerebellum
+  EH ID: EH6697 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4992
+  Saving to: data/spatial_datasets/HumanCerebellum.rds 
+  SUCCESS
+
+[4/32] HumanColorectalCancer
+  EH ID: EH6698 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3138
+  Saving to: data/spatial_datasets/HumanColorectalCancer.rds 
+  SUCCESS
+
+[5/32] HumanGlioblastoma
+  EH ID: EH6699 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3468
+  Saving to: data/spatial_datasets/HumanGlioblastoma.rds 
+  SUCCESS
+
+[6/32] HumanHeart
+  EH ID: EH6700 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4247
+  Saving to: data/spatial_datasets/HumanHeart.rds 
+  SUCCESS
+
+[7/32] HumanLymphNode
+  EH ID: EH6701 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4035
+  Saving to: data/spatial_datasets/HumanLymphNode.rds 
+  SUCCESS
+
+[8/32] HumanOvarianCancer
+  EH ID: EH6702 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3493
+  Saving to: data/spatial_datasets/HumanOvarianCancer.rds 
+  SUCCESS
+
+[9/32] HumanSpinalCord
+  EH ID: EH6703 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 2812
+  Saving to: data/spatial_datasets/HumanSpinalCord.rds 
+  SUCCESS
+
+[10/32] MouseBrainCoronal
+  EH ID: EH6704 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 2702
+  Saving to: data/spatial_datasets/MouseBrainCoronal.rds 
+  SUCCESS
+
+[11/32] MouseBrainSagittalPosterior
+  EH ID: EH6705 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 6644
+  Saving to: data/spatial_datasets/MouseBrainSagittalPosterior.rds 
+  SUCCESS
+
+[12/32] MouseBrainSagittalAnterior
+  EH ID: EH6706 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 5520
+  Saving to: data/spatial_datasets/MouseBrainSagittalAnterior.rds 
+  SUCCESS
+
+[13/32] MouseKidneyCoronal
+  EH ID: EH6707 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 1438
+  Saving to: data/spatial_datasets/MouseKidneyCoronal.rds 
+  SUCCESS
+
+[14/32] HumanBreastCancerIDC_v3.13
+  EH ID: EH6731 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 7785
+  Saving to: data/spatial_datasets/HumanBreastCancerIDC_v3_13.rds 
+  SUCCESS
+
+[15/32] HumanBreastCancerILC_v3.13
+  EH ID: EH6732 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4325
+  Saving to: data/spatial_datasets/HumanBreastCancerILC_v3_13.rds 
+  SUCCESS
+
+[16/32] HumanCerebellum_v3.13
+  EH ID: EH6733 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4992
+  Saving to: data/spatial_datasets/HumanCerebellum_v3_13.rds 
+  SUCCESS
+
+[17/32] HumanColorectalCancer_v3.13
+  EH ID: EH6734 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3138
+  Saving to: data/spatial_datasets/HumanColorectalCancer_v3_13.rds 
+  SUCCESS
+
+[18/32] HumanGlioblastoma_v3.13
+  EH ID: EH6735 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3468
+  Saving to: data/spatial_datasets/HumanGlioblastoma_v3_13.rds 
+  SUCCESS
+
+[19/32] HumanHeart_v3.13
+  EH ID: EH6736 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4247
+  Saving to: data/spatial_datasets/HumanHeart_v3_13.rds 
+  SUCCESS
+
+[20/32] HumanLymphNode_v3.13
+  EH ID: EH6737 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 4035
+  Saving to: data/spatial_datasets/HumanLymphNode_v3_13.rds 
+  SUCCESS
+
+[21/32] HumanOvarianCancer_v3.13
+  EH ID: EH6738 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 3493
+  Saving to: data/spatial_datasets/HumanOvarianCancer_v3_13.rds 
+  SUCCESS
+
+[22/32] HumanSpinalCord_v3.13
+  EH ID: EH6739 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 36601, Spots: 2812
+  Saving to: data/spatial_datasets/HumanSpinalCord_v3_13.rds 
+  SUCCESS
+
+[23/32] MouseBrainCoronal_v3.13
+  EH ID: EH6740 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 2702
+  Saving to: data/spatial_datasets/MouseBrainCoronal_v3_13.rds 
+  SUCCESS
+
+[24/32] MouseBrainSagittalPosterior_v3.13
+  EH ID: EH6741 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 6644
+  Saving to: data/spatial_datasets/MouseBrainSagittalPosterior_v3_13.rds 
+  SUCCESS
+
+[25/32] MouseBrainSagittalAnterior_v3.13
+  EH ID: EH6742 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 5520
+  Saving to: data/spatial_datasets/MouseBrainSagittalAnterior_v3_13.rds 
+  SUCCESS
+
+[26/32] MouseKidneyCoronal_v3.13
+  EH ID: EH6743 
+  Downloading...
+TENxVisiumData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 1438
+  Saving to: data/spatial_datasets/MouseKidneyCoronal_v3_13.rds 
+  SUCCESS
+
+[27/32] WeberDivechaLCdata_Visium
+  EH ID: EH7737 
+  Downloading...
+WeberDivechaLCdata not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 23728, Spots: 20380
+  Saving to: data/spatial_datasets/WeberDivechaLCdata_Visium.rds 
+  SUCCESS
+
+[28/32] WeberDivechaLCdata_singleNucleus
+  EH ID: EH7738 
+  Downloading...
+WeberDivechaLCdata not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  WARNING: Not a SpatialExperiment object (class: SingleCellExperiment ), skipping
+
+[29/32] Visium_humanDLPFC
+  EH ID: EH9516 
+  Downloading...
+STexampleData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 33538, Spots: 4992
+  Saving to: data/spatial_datasets/Visium_humanDLPFC.rds 
+  SUCCESS
+
+[30/32] Visium_mouseCoronal
+  EH ID: EH9517 
+  Downloading...
+STexampleData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+  Genes: 32285, Spots: 4992
+  Saving to: data/spatial_datasets/Visium_mouseCoronal.rds 
+  SUCCESS
+
+[31/32] Janesick_breastCancer_Visium
+  EH ID: EH9522 
+  Downloading...
+STexampleData not installed.
+  Full functionality, documentation, and loading of data might not be possible without installing
+loading from cache
+Loading required package: HDF5Array
+Loading required package: SparseArray
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following object is masked from ‘package:S4Vectors’:
+
+    expand
+
+Loading required package: S4Arrays
+Loading required package: abind
+
+Attaching package: ‘S4Arrays’
+
+The following object is masked from ‘package:abind’:
+
+    abind
+
+The following object is masked from ‘package:base’:
+
+    rowsum
+
+Loading required package: DelayedArray
+
+Attaching package: ‘DelayedArray’
+
+The following objects are masked from ‘package:base’:
+
+    apply, scale, sweep
+
+Loading required package: rhdf5
+
+Attaching package: ‘HDF5Array’
+
+The following object is masked from ‘package:rhdf5’:
+
+    h5ls
+
+  Genes: 18085, Spots: 4992
+  Saving to: data/spatial_datasets/Janesick_breastCancer_Visium.rds 
+  SUCCESS
+
+[32/32] spe
+  EH ID: EH9605 
+  Already downloaded, skipping...
+
+
+=== Download Summary ===
+Successful downloads: 31 
+Failed downloads: 1 
+
+Failed dataset IDs:
+  - EH7738 
+
+Done! Datasets saved to: data/spatial_datasets 

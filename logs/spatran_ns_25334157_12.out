@@ -1,0 +1,99 @@
+==========================================
+Array job started at:   Mon Mar  2 06:23:28 PM PST 2026
+Array job ID:           25334157
+Array task ID:          12
+Node:                   fc30658
+CPUs:                   8
+==========================================
+
+Configuration:
+  Data directory:   data/spatial_datasets
+  Output directory: results
+  Cores:            8
+  Dataset index:    12
+
+=============================================================
+Spatial Nonstationarity Analysis - HPC Parallel Processing
+=============================================================
+Data directory:    data/spatial_datasets 
+Output directory:  results 
+Cores:             8 
+Gene selection:    all expressed genes (after quality filter)
+SLURM array task:  12 
+Start time:        2026-03-02 18:23:29 
+=============================================================
+
+Loading packages...
+Loading analysis functions...
+Analysis functions loaded.
+Testing INLA...
+INLA OK
+
+Found 18 unique dataset files (v3.13 duplicates excluded)
+Array mode: processing dataset 12 of 18 
+
+Setting up 8 parallel workers...
+[[1]]
+NULL
+
+[[2]]
+NULL
+
+[[3]]
+NULL
+
+[[4]]
+NULL
+
+[[5]]
+NULL
+
+[[6]]
+NULL
+
+[[7]]
+NULL
+
+[[8]]
+NULL
+
+
+============================================================
+Dataset 1 / 1 : MouseBrainSagittalAnterior 
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+  Genes: 32285, Spots: 5520
+  After quality filter: 16431 genes (analyse all)
+  Building shared SPDE mesh...
+  Mesh: 282 nodes
+  Running parallel INLA fits for 16431 genes...
+error calling combine function:
+<simpleError in rbind(deparse.level, ...): numbers of columns of arguments do not match>
+  Completed in 585.6 min
+  Saved: results/MouseBrainSagittalAnterior_results.rds 
+  Successful: 1880/1880  |  Favour non-stationary: 294 (15.6%)
+
+============================================================
+Combining results across all datasets...
+Saved combined results to: results 
+
+============================================================
+ANALYSIS SUMMARY
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+Datasets processed: 1 
+Total genes:        1880 
+Successful fits:    1880 
+Failed fits:        0 
+
+Bayes Factor summary:
+  Mean log(BF):                 -6.371 
+  Median log(BF):               -4.676 
+  % favouring non-stationary:   15.6 %
+  % extreme for stationary:     51.4 %
+  % extreme for non-stationary: 9.5 %
+
+End time: 2026-03-03 04:09:24 
+Done!
+
+==========================================
+Task 12 completed successfully at: Tue Mar  3 04:09:25 AM PST 2026
+==========================================

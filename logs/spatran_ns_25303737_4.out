@@ -1,0 +1,366 @@
+==========================================
+Array job started at:   Mon Mar  2 11:05:01 AM PST 2026
+Array job ID:           25303737
+Array task ID:          4
+Node:                   fc30609
+CPUs:                   32
+==========================================
+
+Configuration:
+  Data directory:   data/spatial_datasets
+  Output directory: results
+  Cores:            32
+  Dataset index:    4
+
+=============================================================
+Spatial Nonstationarity Analysis - HPC Parallel Processing
+=============================================================
+Data directory:    data/spatial_datasets 
+Output directory:  results 
+Cores:             32 
+Gene selection:    all expressed genes (after quality filter)
+SLURM array task:  4 
+Start time:        2026-03-02 11:05:02 
+=============================================================
+
+Loading packages...
+Loading analysis functions...
+Analysis functions loaded.
+Testing INLA...
+INLA OK
+
+Found 18 unique dataset files (v3.13 duplicates excluded)
+Array mode: processing dataset 4 of 18 
+
+Setting up 32 parallel workers...
+[[1]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[2]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[3]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[4]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[5]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[6]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[7]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[8]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[9]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[10]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[11]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[12]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[13]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[14]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[15]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[16]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[17]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[18]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[19]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[20]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[21]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[22]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[23]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[24]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[25]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[26]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[27]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[28]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[29]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[30]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[31]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+[[32]]
+ [1] "dplyr"                "INLA"                 "Matrix"              
+ [4] "SpatialExperiment"    "SingleCellExperiment" "SummarizedExperiment"
+ [7] "Biobase"              "GenomicRanges"        "GenomeInfoDb"        
+[10] "IRanges"              "S4Vectors"            "BiocGenerics"        
+[13] "stats4"               "MatrixGenerics"       "matrixStats"         
+[16] "stats"                "graphics"             "grDevices"           
+[19] "utils"                "datasets"             "methods"             
+[22] "base"                
+
+
+============================================================
+Dataset 1 / 1 : HumanColorectalCancer 
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+  Genes: 36601, Spots: 3138
+  After quality filter: 16236 genes (analyse all)
+  Running parallel INLA fits for 16236 genes...
+
+==========================================
+Task 4 FAILED (exit 137) at: Mon Mar  2 11:10:19 AM PST 2026
+==========================================

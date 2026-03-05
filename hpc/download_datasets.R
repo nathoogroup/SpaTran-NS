@@ -21,22 +21,30 @@ suppressPackageStartupMessages({
   library(SpatialExperiment)
 })
 
-cat("=== SpatialExperiment Dataset Downloader ===\n")
+cat("=== 10x Visium SpatialExperiment Dataset Downloader ===\n")
 cat("Output directory:", output_dir, "\n\n")
 
 # Initialize ExperimentHub
 eh <- ExperimentHub()
 
-# Query for ALL SpatialExperiment datasets (not just Visium)
-cat("Querying ExperimentHub for ALL SpatialExperiment datasets...\n")
-spe_query <- query(eh, "SpatialExperiment")
-cat("Found", length(spe_query), "SpatialExperiment datasets\n\n")
+# Query for 10x Visium SpatialExperiment datasets
+cat("Querying ExperimentHub for 10x Visium SpatialExperiment datasets...\n")
+spe_query <- query(eh, c("SpatialExperiment", "Visium"))
+cat("Found", length(spe_query), "Visium SpatialExperiment datasets\n\n")
+
+# Show manifest before downloading
+cat("Dataset manifest:\n")
+manifest_meta <- mcols(spe_query)
+for (i in seq_len(nrow(manifest_meta))) {
+  cat(sprintf("  [%s] %s\n", names(spe_query)[i], manifest_meta$title[i]))
+}
+cat("\n")
 
 # Create manifest
 manifest <- data.frame(
-  eh_id = names(spe_query),
-  title = mcols(spe_query)$title,
-  species = mcols(spe_query)$species,
+  eh_id      = names(spe_query),
+  title      = mcols(spe_query)$title,
+  species    = mcols(spe_query)$species,
   rdataclass = mcols(spe_query)$rdataclass,
   stringsAsFactors = FALSE
 )
@@ -89,10 +97,16 @@ for (i in seq_along(spe_query)) {
     n_genes <- nrow(obj)
     n_spots <- ncol(obj)
     cat(sprintf("  Genes: %d, Spots: %d\n", n_genes, n_spots))
-    
+
+    # Drop image data — not needed for analysis and causes saveRDS to fail
+    # when newer BiocGenerics::containsOutOfMemoryData encounters LoadedSpatialImage
+    if (nrow(SpatialExperiment::imgData(obj)) > 0) {
+      SpatialExperiment::imgData(obj) <- S4Vectors::DataFrame()
+    }
+
     # Save to RDS
     cat("  Saving to:", output_file, "\n")
-    saveRDS(obj, output_file)
+    base::saveRDS(obj, output_file)
     
     successful_downloads <- successful_downloads + 1
     cat("  SUCCESS\n")
