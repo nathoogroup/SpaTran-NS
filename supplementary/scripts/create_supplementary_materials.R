@@ -121,6 +121,41 @@ sample_type_map <- data.frame(
   stringsAsFactors = FALSE
 )
 
+space_ranger_map <- data.frame(
+  dataset_name = c(
+    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainCoronal",
+    "MouseBrainSagittalPosterior", "Visium_humanDLPFC", "Visium_mouseCoronal",
+    "MouseBrainSagittalAnterior", "HumanGlioblastoma", "HumanColorectalCancer",
+    "HumanLymphNode", "HumanOvarianCancer", "MouseKidneyCoronal", "HumanHeart"
+  ),
+  space_ranger_version = c(
+    "1.2.0", "1.2.0", "1.1.0", "1.1.0", "1.0.0", "1.0.0", "1.1.0",
+    "1.2.0", "1.2.0", "1.1.0", "1.2.0", "1.1.0", "1.1.0"
+  ),
+  space_ranger_version_source = c(
+    rep("10x Genomics source dataset archived in ExperimentHub", 4),
+    "spatialLIBD/Maynard et al. source documentation",
+    "10x Genomics source dataset used by STexampleData",
+    rep("10x Genomics source dataset archived in ExperimentHub", 7)
+  ),
+  space_ranger_source_url = c(
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_BreastCancer",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_SpinalCord",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Adult_Mouse_Brain",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Mouse_Brain_Sagittal_Posterior",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC8095368/",
+    "https://www.10xgenomics.com/datasets/mouse-brain-section-coronal-1-standard-1-0-0",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Mouse_Brain_Sagittal_Anterior",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_Glioblastoma",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_ColorectalCancer",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Human_Lymph_Node",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_OvarianCancer",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Mouse_Kidney",
+    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Human_Heart"
+  ),
+  stringsAsFactors = FALSE
+)
+
 results <- read_rds_results(file.path(root, "results"))
 results$log_bayes_factor <- as.numeric(results$log_bayes_factor)
 results$bayes_factor <- as.numeric(results$bayes_factor)
@@ -195,6 +230,7 @@ dataset_summary <- do.call(rbind, lapply(split_valid, function(d) {
 }))
 row.names(dataset_summary) <- NULL
 dataset_summary <- merge(dataset_summary, sample_type_map, by = "dataset_name", all.x = TRUE)
+dataset_summary <- merge(dataset_summary, space_ranger_map, by = "dataset_name", all.x = TRUE)
 dataset_summary$species_group[is.na(dataset_summary$species_group)] <-
   ifelse(grepl("Mouse|mouse", dataset_summary$dataset_name[is.na(dataset_summary$species_group)]),
     "Murine", "Human")
@@ -406,7 +442,7 @@ additional_files <- data.frame(
   ),
   description = c(
     "Supplementary methods, supplemental figure legends, concise summary tables, and Genome Biology-oriented reproducibility notes.",
-    "One row per analyzed dataset, including sample labels, number of spots and genes, ExperimentHub metadata when available, percentage of genes favoring nonstationary covariance, and stationary/non-spatial summaries.",
+    "One row per analyzed dataset, including sample labels, Space Ranger version/source URL, number of spots and genes, ExperimentHub metadata when available, percentage of genes favoring nonstationary covariance, and stationary/non-spatial summaries.",
     "One row per analyzed gene and dataset, including log Bayes factors, Bayes factor evidence strengths, model favored by the nonstationary-versus-stationary comparison, stationary-versus-non-spatial comparison when available, and the final three-model category.",
     "Counts and percentages of genes by dataset, favored model, and Bayes factor evidence strength for the nonstationary versus stationary comparison.",
     "Counts and percentages of stationary-favored genes that favor either the stationary spatial model or the stationary non-spatial model.",
@@ -421,10 +457,10 @@ additional_files <- data.frame(
 write.csv(additional_files, file.path(out_dir, "additional_file_metadata.csv"), row.names = FALSE)
 
 ds_tex <- dataset_summary[, c("dataset_name", "species_group", "tissue", "n_spots",
-  "n_genes_analyzed", "pct_nonstationary")]
-names(ds_tex) <- c("Dataset", "Species", "Tissue", "Spots", "Genes", "% NS")
+  "n_genes_analyzed", "space_ranger_version", "pct_nonstationary")]
+names(ds_tex) <- c("Dataset", "Species", "Tissue", "Spots", "Genes", "Space Ranger", "% NS")
 write_simple_table(head(ds_tex, 13), file.path(tab_dir, "dataset_summary_table.tex"),
-  "Analyzed datasets and proportion of genes favoring the nonstationary spatial model.",
+  "Analyzed datasets, Space Ranger versions, and proportion of genes favoring the nonstationary spatial model.",
   "tab:dataset-summary", digits = 1)
 
 mesh_tex <- mesh_summary[, c("dataset_name", "n_spots", "x_range", "y_range",
@@ -490,12 +526,11 @@ if (file.exists(gsea_path)) {
   }
 }
 
-desc_lines <- c(
-  "\\section*{Additional files}",
-  paste0("\\textbf{Additional file ", seq_len(nrow(additional_files)), ".} ",
-    additional_files$title, ". Format: ", additional_files$format, ". ",
-    additional_files$description, "\n")
-)
+desc_entries <- paste0("\\textbf{Additional file ", seq_len(nrow(additional_files)), ".} ",
+  additional_files$title, ". Format: ", additional_files$format, ". ",
+  additional_files$description)
+desc_lines <- c("\\section*{Additional files}", as.vector(rbind(desc_entries, "")))
+desc_lines <- desc_lines[-length(desc_lines)]
 writeLines(desc_lines, file.path(out_dir, "additional_file_descriptions_for_manuscript.tex"))
 
 availability <- c(
