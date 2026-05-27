@@ -240,9 +240,12 @@ p_combined <- build_combined(
 
 out_png <- file.path(output_dir, "spatial_maps_breast_ovarian.png")
 out_pdf <- file.path(output_dir, "spatial_maps_breast_ovarian.pdf")
+model_examples_png <- file.path(output_dir, "model_examples.png")
 
 ggsave(out_png, p_combined, width = 18, height = 13, dpi = 300, bg = "white")
 cat("Saved:", out_png, "\n")
+ggsave(model_examples_png, p_combined, width = 18, height = 13, dpi = 300, bg = "white")
+cat("Saved:", model_examples_png, "\n")
 ggsave(out_pdf, p_combined, width = 18, height = 13)
 cat("Saved:", out_pdf, "\n")
 cat("Done.\n")
