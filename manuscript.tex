@@ -1,0 +1,294 @@
+%Version 3.1 December 2024
+% See section 11 of the User Manual for version history
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%% All additional figures and files should be attached             %%
+%% separately and not embedded in the \TeX\ document itself.       %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%\documentclass[referee,sn-basic]{sn-jnl}% referee option is meant for double line spacing
+
+%%=======================================================%%
+%% to print line numbers in the margin use lineno option %%
+%%=======================================================%%
+
+%%\documentclass[lineno,pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+%%=========================================================================================%%
+%% the documentclass is set to pdflatex as default. You can delete it if not appropriate.  %%
+%%=========================================================================================%%
+
+%%\documentclass[sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove Numbered in the optional parenthesis.
+%%The option is available for: sn-basic.bst, sn-chicago.bst%
+
+%%\documentclass[pdflatex,sn-nature]{sn-jnl}% Style for submissions to Nature Portfolio journals
+%%\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style
+%%\documentclass[pdflatex,sn-mathphys-ay]{sn-jnl}% Math and Physical Sciences Author Year Reference Style
+%%\documentclass[pdflatex,sn-aps]{sn-jnl}% American Physical Society (APS) Reference Style
+%%\documentclass[pdflatex,sn-vancouver-num]{sn-jnl}% Vancouver Numbered Reference Style
+%%\documentclass[pdflatex,sn-vancouver-ay]{sn-jnl}% Vancouver Author Year Reference Style
+%%\documentclass[pdflatex,sn-apa]{sn-jnl}% APA Reference Style
+%%\documentclass[pdflatex,sn-chicago]{sn-jnl}% Chicago-based Humanities Reference Style
+
+%%%% Standard Packages
+%%<additional latex packages if required can be included here>
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{array}%
+\usepackage{longtable}%
+\usepackage{lscape}%
+\usepackage{float}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+%%%%
+
+\graphicspath{{figures/}{results/}{simulation/output/}{results/figures/gsea_clusterprofiler/}}
+
+%%%%%=============================================================================%%%%
+%%%%  Remarks: This template is provided to aid authors with the preparation
+%%%%  of original research articles intended for submission to journals published
+%%%%  by Springer Nature. The guidance has been prepared in partnership with
+%%%%  production teams to conform to Springer Nature technical requirements.
+%%%%  Editorial and presentation requirements differ among journal portfolios and
+%%%%  research disciplines. You may find sections in this template are irrelevant
+%%%%  to your work and are empowered to omit any such section if allowed by the
+%%%%  journal you intend to submit to. The submission guidelines and policies
+%%%%  of the journal take precedence. A detailed User Manual is available in the
+%%%%  template package for technical guidance.
+%%%%%=============================================================================%%%%
+
+%% as per the requirement new theorem styles can be included as shown below
+\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%  meant for continuous numbers
+%%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+%% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+\newtheorem{proposition}[theorem]{Proposition}%
+%%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
+
+\theoremstyle{thmstyletwo}%
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+
+\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
+%%\unnumbered% uncomment this for unnumbered level heads
+
+\begin{document}
+
+\title[Article Title]{Covariance Nonstationarity is Evident in Spatial Transcriptomics and Provides a New Categorization of Spatially Varying Genes}
+
+%%=============================================================%%
+%% GivenName	-> \fnm{Joergen W.}
+%% Particle	-> \spfx{van der} -> surname prefix
+%% FamilyName	-> \sur{Ploeg}
+%% Suffix	-> \sfx{IV}
+%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg}
+%%  \sfx{IV}}\email{iauthor@gmail.com}
+%%=============================================================%%
+
+\author[1]{\fnm{Puneet} \sur{Velidi}}\email{pvelidi@uvic.ca}
+
+\author[1]{\fnm{Zhengxiao} \sur{Wei}}\email{zhengxiao@uvic.ca}
+
+\author[2]{\fnm{Shreena} \sur{Kalaria}}\email{skalaria@bccrc.ca}
+
+\author[2]{\fnm{C\'{e}line} \sur{Laumont}}\email{claumont@bccrc.ca}
+
+\author[2]{\fnm{Brad} \sur{Nelson}}\email{bnelson@bccrc.ca}
+
+\author*[1]{\fnm{Farouk} \sur{Nathoo}}\email{nathoo@uvic.ca}
+
+
+\affil*[1]{\orgdiv{Department of Mathematics and Statistics}, \orgname{University of Victoria}, \orgaddress{\street{PO BOX 1700 STN CSC}, \city{Victoria}, \postcode{V8W 2Y2}, \state{British Columbia}, \country{Canada}}}
+
+\affil[2]{\orgdiv{Deeley Research Centre}, \orgname{BC Cancer}, \orgaddress{\street{2410 Lee Avenue, 3rd Floor}, \city{Victoria}, \postcode{V8R 6V5}, \state{British Columbia}, \country{Canada}}}
+
+
+%%==================================%%
+%% Sample for unstructured abstract %%
+%%==================================%%
+
+\abstract{Gaussian process-based models underlie many spatial transcriptomics tools and assume stationary covariance kernels. We test this assumption across 13 Visium datasets using approximate Bayes factors from R-INLA comparing stationary and non-stationary Matérn covariance functions and find that the datasets vary from 3\% to 50\% of the genes showing evidence for covariance non-stationarity. While it is  typically ignored, covariance non-stationarity is evident in spatial transcriptomic data and leads to new way of characterizing spatially-varying genes. We present a preliminary method for Bayesian testing of genes to determine if the variability in expression is spatial nonstationary, spatial stationary, or non-spatial.}
+
+
+%%================================%%
+%% Sample for structured abstract %%
+%%================================%%
+
+% \abstract{\textbf{Purpose:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+%
+% \textbf{Methods:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+%
+% \textbf{Results:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.
+%
+% \textbf{Conclusion:} The abstract serves both as a general introduction to the topic and as a brief, non-technical summary of the main results and their implications. The abstract must not include subheadings (unless expressly permitted in the journal's Instructions to Authors), equations or citations. As a guide the abstract should not exceed 200 words. Most journals do not set a hard limit however authors are advised to check the author instructions for the journal they are submitting to.}
+
+\keywords{Bayes Factors, Integrated Nested Laplace Approximations, Nonstationary Spatial Covariance, Spatial Transcriptomics}
+
+%%\pacs[JEL Classification]{D8, H51}
+
+%%\pacs[MSC Classification]{35A01, 65L10, 65L12, 65L20, 65L70}
+
+\maketitle
+
+Define different types of nonstationarity (weak sense/strong sense). Discuss testing  with Bayes factors.
+
+This is a rich area with some directly relevant literature and some highly relevant adjacent work. Let me synthesise this for you across three tiers: work directly in spatial transcriptomics that touches nonstationary covariance, work that explicitly applies nonstationary GPs to this problem, and foundational spatial statistics methods that are the natural toolkit for this agenda.
+
+Literature on Nonstationary Covariance Modelling for Spatially-Varying Genes
+
+1. Most Directly Relevant: Nonstationary GP Approaches in Spatial Transcriptomics
+SR-GMM (Sottosanti, Risso and Denti, 2025 — Journal of Classification)
+
+This is arguably the most directly relevant paper to your question. The SR-GMM proposes a modelling framework for clustering spatial transcriptomics observations via Gaussian processes, where rather than specifying covariance kernels as a function of the spatial structure, the spatial structure is used to inform a generalized Cholesky decomposition of precision matrices. This approach prevents issues with kernel misspecification and facilitates the estimation of a nonstationary spatial covariance structure. The method builds upon Kidd and Katzfuss (2022) and integrates their nonparametric, non-stationary model into a model-based clustering framework, clustering genes with similar nonstationary spatial dependence structures. There is also an R package available on GitHub
+
+The direct statistical foundation for SR-GMM. Kidd and Katzfuss developed a Bayesian nonstationary and nonparametric covariance estimation method for large spatial data, estimating the Cholesky factor of the precision matrix using spatially regularized priors, and applied it to climate-model emulation where it captured nonstationary and nonparametric behavior better than existing methods. This paper is the key upstream reference for nonstationary, non-kernel-based GP covariance in this context.
+
+2. GP-Based SVG Methods Using Stationary Covariance (Relevant Baselines and Context)
+Most existing SVG methods use stationary GP kernels. Understanding their limitations is critical motivation for nonstationary extensions:
+SpatialDE (Svensson et al., 2018 — Nature Methods)
+SpatialDE uses GP models to identify spatially variable genes, decomposing expression variation into a spatial component characterized by spatial covariance and independent observation noise, with the covariance structure determined by a kernel function of spatial locations. PubMed Central It uses a fixed set of stationary squared-exponential kernels — a limitation directly relevant to your interest in nonstationarity.
+
+SPARK (Sun et al., 2020 — Nature Methods)
+SPARK models spatial count data via a generalized linear spatial model using a zero-mean, stationary Gaussian process to capture the spatial correlation pattern, where the covariance K(s) is a kernel function of the spatial locations. PubMed Central SPARK uses multiple kernels with fixed length-scale parameters across all genes — another key stationarity limitation.
+
+nnSVG (Weber et al., 2023 — Nature Communications)
+This is the most computationally scalable GP-based SVG method and the current state of the art. nnSVG is based on nearest-neighbor Gaussian process (NNGP) models and crucially uses gene-specific estimates of length scale parameters within the GP models, enabling flexibility in the types of SVGs identified — unlike SPARK-X which uses the same kernel and length scale parameters for all genes. Nature However, nnSVG still uses a single stationary Matérn kernel per gene. A review of SVG methods notes that while nnSVG offers improvements through gene-specific kernel function parameter selection, it relies on a single type of kernel function, opening room for further methodological development for optimal kernel selection. PubMed Central This gap is precisely the nonstationary covariance modelling opportunity you are pursuing.
+BOOST-GP (Li et al., 2021 — Bioinformatics)
+BOOST-GP integrates the GP to capture spatial correlation, directly models count data using a negative binomial distribution, and addresses zero inflation, improving on SpatialDE and SPARK both of which employ GP to estimate spatial covariance only at certain predefined length-scales, meaning the estimation is only an approximated solution. PubMed Central
+
+3. Nonstationary Covariance Methods in Spatial Statistics (Directly Applicable Theory)
+Paciorek and Schervish (2006) — Environmetrics
+The foundational reference for nonstationary Matérn covariance in spatial statistics. Paciorek & Schervish introduced a new class of nonstationary covariance functions that include a nonstationary version of the Matérn covariance, where the class allows one to "knit together" local covariance parameters into a valid global nonstationary covariance regardless of how the local covariance structure is estimated. PubMed This is the standard starting point for applying nonstationary covariance in any domain, including transcriptomics.
+Nonstationary NNGP with spatially-varying Matern kernels (Peruzzi and Banerjee, JCGS 2025)
+This paper devises a new class of nonstationary spatial models for massive datasets using spatially-varying Matérn covariance kernels, endowing the space-varying parameters with a low-dimensional Gaussian process while the spatial process itself is modeled using directed acyclic graphs such as NNGP and Vecchia processes — achieving sparser representations while endowing variances and spatial range parameters with their own processes. Taylor and Francis Online Given that nnSVG already uses NNGP for SVG detection, this framework is a natural candidate for a nonstationary extension of nnSVG.
+
+4. Closely Related Method: SPADE (Nucleic Acids Research, 2024)
+SPADE notes that available kernel-based SVG methods use fixed hyperparameters for the characteristic length scale, limiting their ability to capture specific spatial patterns — and it is built on a GPR model with a gene-specific Gaussian kernel, including spatial mapping with Gaussian processes and nonstationary Fourier features as a cited method. Oxford Academic This paper explicitly references nonstationary Fourier features for spatial mapping in its bibliography (Ton et al.'s "Spatial Mapping with Gaussian Processes and Nonstationary Fourier Features"), suggesting growing awareness of the nonstationarity gap.
+
+Summary and Gap
+The literature shows a clear progression: SpatialDE/SPARK use fixed stationary kernels for all genes nnSVG fits gene-specific stationary kernels the nonstationary covariance step remains largely unexplored in the SVG context, with SR-GMM (2025) being the most direct attempt.
+
+
+ Testing for spatially varying genes is an important step in the analysis of spatial transcriptomic data from both spatial RNA-seq and imaging-based platforms. Applications can focus on understanding the spatial correlation structure of specific genes that are of interest; spatially varying genes can be used in downstream analyses that cluster genes based on their estimated spatial processes using algorithms for clustering spatial functional data ( \cite{pan2024clustering}). This allows for finding groups of genes that exhibit similar spatial patterns.
+Suppose $\mathbf{Z}(\mathbf{x}),\,\, \mathbf{x} \in \mathbf{D} \subset \mathbb{R}^{2}$ is a random field representing the residual spatial component of variability for normalized expression of a gene over tissue space $\mathbf{D}$. $\mathbf{Z}(\mathbf{x})$ is said to be weakly stationary if it has finite second moments, its mean function is constant $E[\mathbf{Z}(\mathbf{x})] = \mu$ and it has an autocovariance function $K(\cdot)$ that depends on locations $\mathbf{x}$ and $\mathbf{y}$ only through the separation vector $\text{cov}[\mathbf{Z}(\mathbf{x}), \mathbf{Z}(\mathbf{y})] = K(\mathbf{x}-\mathbf{y})$ \cite{stein1999interpolation}.
+When the autocovariance function depends on location, the spatial process is nonstationary. For spatial transcriptomic data, typical normalization approaches such as total sum scaling will not remove nonstationarity in the spatial correlation structure. %Figure 1 shows two examples contrasting how the spatial dependence can vary across the tissue.
+
+Indeed, most spatial covariance modeling for spatially varying genes has been based on simple exponential, squared-exponential or periodic stationary covariance functions. In fact, the covariance functions are typically also assumed isotropic. These assumptions are unrealistic, as the tissue space over which the data are observed is heterogeneous, and this heterogeneity can affect the spatial covariance structure of the gene expression.
+
+SpatialDE \cite{svensson2018spatialde} is based on Gaussian processes applied to normalized expression values and employs a likelihood ratio test for spatial variability. Its computational complexity is $O(n^{3})$ and it incorporates an isotropic exponential covariance function. Spatial DE2 \cite{kats2021spatialde2} assumes a Poisson response and allows for multiple (stationary) covariance functions applied after tissue segmentation based on gene expression. It incorporates TensorFlow and GPUs for computation and its computational complexity is $O(n^{2})$. Spark \cite{sun2020statistical} is based on an overdisperesed Poisson model and allows for multiple covariance functions for the spatial process including periodic functions. It implements a score test for spatial variation and its computation is scalable. nnSVG \cite{weber2023nnsvg} is a Gaussian process based approach incorporating an exponential covariance function that is applied to normalized expression data. It is computationally scalable and is based on the nearest-neighbor Gaussian process approximation. Its test for spatial variability is based on a likelihood ratio test and it incorporates the bootstrap. CTSN \cite{yu2022identification} is based on a zero-inflated negative binomial model and incorporates a linear, squared exponential, periodic covariance function for the underlying spatial process. A recent large study \cite{zhao2022modeling} examining 20 spatial transcriptomic datasets focusing on the distribution of counts concludes that modeling zero-inflation is unnecessary so that Poisson or overdispersed Poisson models are sufficient. Thus the prevailing modeling approaches that seem useful are Gaussian processes for a normalized response or overdispersed spatial Poisson for expression counts. trendsceek \cite{edsgard2018identification} and scGCO \cite{zhang2022identification} are alternative approaches that convert the data so that it can be analyzed as a marked spatial point process.
+
+While the literature on the analysis of spatially varying genes is growing rapidly, two directions have been largely underdeveloped. First, Bayesian testing approaches based on posterior model probabilities and Bayes factors have been mostly overlooked. Development along these lines is important as many studies will have prior information on which genes may vary spatially. This prior information can be integrated with Bayesian multiplicity adjustments when testing genes for spatial variation. Exceptions are \cite{li2021bayesian} where Bayes factors are developed for testing, but only isotropic spatial covariance functions are considered, and \cite{jiang2022bayesian} where Bayes factors are computed using Markov chain Monte Carlo in a model that requires dichotimization of the gene expression in order to apply the Ising model for spatial dependence. A useful and computationally scalable approach to modeling nonstationary spatial processes is through the stochastic partial differential equation representation of the Mat\'ern process \cite{lindgren2011explicit}. This representation has an approximate solution incorporating Gaussian Markov random fields with approximate Bayesian inference based on integrated nested Laplace approximations \cite{rue2009approximate}.
+
+\noindent {\bf 1. Nonstationary Bayesian Testing for Spatially Varying Genes:} The model for normalized gene expression is a linear model with a spatial effect that is assumed to follow a Gaussian process with a nonstationary Mat\'ern kernel. It is well known that such a process can be specified as the solution to a stochastic partial differential equation referred to as a Whittle-Mat\'ern field \cite{lindgren2022spde}. In the stationary and isotropic case the covariance function takes the form $C_{ij} = \frac{2^{1-\nu}}{\Gamma(\nu)}(\frac{\sqrt{2\nu}\delta_{ij}}{\rho/2})^\nu K_{\nu}(\frac{\sqrt{2\nu}\delta_{ij}}{\rho/2})$, $\delta_{ij} = ||\mathbf{s_{i}}-\mathbf{s_{j}}||$, $\mathbf{s_{i}} \in \mathbf{D} \subset \mathcal{R}^{2}$, where $K_{\nu}$ is the modified Bessel function of the second kind of order $\nu >0$. Under the reparameterization $\kappa = 2\sqrt{2 \nu}/\rho$, $\alpha = \nu+1$ and $\tau^{2} = \frac{\Gamma(\nu)}{(4\pi)\Gamma(\alpha)\kappa^{2\nu}}\sigma^{-2}$, a nonstationary process arises under a specification that allows $\kappa$ and $\tau$ to vary across location $\mathbf{s}$,
+$
+\ln \kappa(\mathbf{s}) = \sum_{i}\beta^{(\kappa)}_{i}B_{i}^{(\kappa)}(\mathbf{s}),\,\,
+$
+$
+\ln \tau(\mathbf{s}) = \sum_{i}\beta^{(\tau)}_{i}B_{i}^{(\tau)}(\mathbf{s}),
+$
+where $\{B_{i}(\mathbf{s})\}$ is a set of spatial basis functions. This specification is well known and approximate Bayesian inference for this process is implemented in standard software.
+
+Our innovation for spatial transcriptomic data will be to incorporate the tissue anatomy into the nonstationary covariance structure. We will apply convolutional neural networks \cite{al2019integrating} to segment the hematoxylin and eosin (H\&E) image into tumour (T), stroma (S) and boundary (B) regions. From this we will create three binary-valued processes characterizing the tissue at each location $I_{T}(\mathbf{s})$, $I_{S}(\mathbf{s})$, $I_{B}(\mathbf{s})$. Let $h^{(\kappa,T)}(\mathbf{s}) = \sum_{i}\beta^{(\kappa,T)}_{i}B_{i}^{(\kappa)}(\mathbf{s})$ with similar definitions for
+$h^{(\kappa,S)}(\mathbf{s})$, $h^{(\kappa,B)}(\mathbf{s})$, $h^{(\tau,T)}(\mathbf{s})$, $h^{(\tau,S)}(\mathbf{s})$ and $h^{(\tau,B)}(\mathbf{s})$. The tissue annotations then enter the covariance structure through convolution
+$$
+\ln \kappa(\mathbf{s}) = (h^{(\kappa,T)} \ast I_{T})(\mathbf{s}) + (h^{(\kappa,S)} \ast I_{S})(\mathbf{s}) + (h^{(\kappa,B)} \ast I_{B})(\mathbf{s}),
+$$
+$$
+\ln \tau(\mathbf{s}) = (h^{(\tau,T)} \ast I_{T})(\mathbf{s}) + (h^{(\tau,S)} \ast I_{S})(\mathbf{s}) + (h^{(\tau,B)} \ast I_{B})(\mathbf{s}).
+$$
+This allows the covariance function to depend on tissue structure while also being continuous.
+
+The model will be fit within the integrated nested Laplace approximation (INLA) framework. Two additional models, one with a simpler stationary Whittle-Mat\'ern field and another without a spatial effect will be considered. The marginal likelihoods associated with each of the three models will be estimated using INLA \cite{hubin2016estimating} and combined with prior model probabilities to produce posterior probabilities associated with nonstationary spatial variation, stationary spatial variation and no spatial variation for a given gene. With multiple genes, we will apply Bayesian adjustments for multiplicity (see, e.g., \cite{whittemore2007bayesian}).
+
+It is necessary to clarify how the work proposed in this objective above differs from the recent preprint \cite{arnroth2025inlaomics}. INLAomics is a conditionally Poisson mixed model for spatially-varying protein and gene expression data, where spatial effects are modeled using a multivariate conditional autoregressive prior. The nonstationary spatial model we propose is different in several respects. First, the geostatistical framework underlying our proposed model allows for a more straightforward and intuitive interpretation of the spatial covariance structure. It also allows us to test for nonstationarity. In the context of studying spatially-varying genes, understanding the spatial correlation structure is a desired goal in understanding the spatial expression of a particular gene. In other contexts such as regression analysis, this may be less important. Our nonstationary spatial covariance model is also parameterized in terms of a convolution of the tissue annotations and a collection of spatial basis functions. This is a step beyond including covariates in the conditional mean. This makes the spatial covariance more realistic, in addition to being a novel formulation of the nonstationary Whittle-Mat\'ern process tailored for spatial transcriptomics.
+
+As an alternative to modeling the normalized gene expression with a nonstationary Gaussian process linear model, we will also develop hierarchical Poisson and negative binomial models for direct application to gene expression counts. The spatial effects in these models will be based on the same nonstationary Whittle-Mat\'ern process. Hypothesis testing for nonstationary spatial variation and stationary spatial variation will proceed as in the Gaussian case by computing approximate posterior model probabilities with Bayesian adjustments for multiplicity.
+
+While methods for the detection of spatially varying genes are being developed at a rapid pace, nonstationary spatial modeling has been ignored. The development of nonstationary spatial approaches will lead not only to improved testing due to more realistic modeling, but also to an entirely new way to characterize the spatial variability of genes.
+
+Gaussian process-based models underlie many of the most popular spatial transcriptomics tools and assume stationary covariance in their kernels. We test this assumption across 13 Visium datasets using approximate Bayes factors from R-INLA comparing stationary vs. non-stationary Matérn covariance and find tissues vary from 5\% to 50\% of genes showing evidence for non-stationarity. For stationary genes, we compare the stationary model to the non-spatial model. We simulate data for every gene in two datasets under the fitted non-stationary model where $BF_{10} > 1$ and the fitted stationary model otherwise to empirically characterize the statistical power and FDR of R-INLA Bayes factor threshold. We assess gene sets most enriched among genes with high evidence for non-stationarity. While methods for spatial gene expression analysis have not considered covariance non-stationarity, our results suggest that spatial transcriptomics can exhibit substantial covariance non-stationarity. In addition to being an important feature of the data, spatial non-stationarity leads to an entirely new way of characterizing spatially-varying genes.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\linewidth]{model_examples.png}
+    \caption{Gene expression detrending residual maps after quantile normalization and polynomial detrending (quadratic) for A. Human and B. Murine tissues showing the gene with the most evidence via Bayes factor for models (i) non-stationary spatial vs stationary spatial and, following backward selection model comparison, (ii, iii) stationary spatial vs stationary non-spatial. S = Stationary spatial, NS = Non-stationary spatial, NP = Stationary non-spatial}
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{analysis.png}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
+
+
+
+%%===========================================================================================%%
+%% If you are submitting to one of the Nature Portfolio journals, using the eJP submission   %%
+%% system, please include the references within the manuscript file itself. You may do this  %%
+%% by copying the reference list from your .bbl file, paste it into the main manuscript .tex %%
+%% file, and delete the associated \verb+\bibliography+ commands.                            %%
+%%===========================================================================================%%
+
+\bibliography{sn-bibliography}% common bib file
+%% if required, the content of .bbl file can be included here once bbl is generated
+%%\input sn-article.bbl
+
+\clearpage
+
+\section*{Online Methods}
+
+\subsection*{Data and Preprocessing}
+
+Spatial BCR-sequencing datasets were obtained from two ovarian cancer patients (4A and 4C) from the British Columbia Cancer Agency’s IROC study, and from the breast cancer dataset of Engblom \textit{et al.}~\cite{engblom2023repair}. The Engblom dataset contains multiple tissue regions; region C was used for simulation experiments, while all four regions were included in the real data analysis. Each dataset contained spatial barcode coordinates and spot-by-gene expression matrices for heavy- and light-chain transcripts. All analyses were performed in R (version 4.3.1).
+
+\section*{Acknowledgements}
+
+
+\section*{Funding}
+This work was supported by funding from NSERC, CIHR,  TFRI and MMI.
+
+\section*{Competing interests}
+The authors declare no competing interests.
+
+
+\section*{Code availability}
+
+\url{https://github.com/nathoogroup/SpaTran-NS}
+
+
+
+\section*{Author contributions}
+Conceptualization: CML, BHN, FSN;
+Methodology: YL, FSN;
+Data analysis: YL;
+Data collection and preprocessing: CML, SNK, YL;
+Software: YL;
+Supervision: CML, BHN, FSN;
+Writing – original draft: YL, FSN;
+Writing – review and editing: CML, SNK, BHN.
+
+
+\end{document}

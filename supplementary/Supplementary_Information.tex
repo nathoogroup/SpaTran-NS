@@ -1,0 +1,391 @@
+\providecommand{\supplementarymaterialpath}{overleaf_upload_root/}
+
+\providecommand{\suppinputtable}[1]{%
+  \IfFileExists{#1}{%
+    \input{#1}%
+  }{%
+    \IfFileExists{\supplementarymaterialpath#1}{%
+      \input{\supplementarymaterialpath#1}%
+    }{%
+      \IfFileExists{generated_tables/#1}{%
+        \input{generated_tables/#1}%
+      }{%
+        \IfFileExists{supplementary/generated_tables/#1}{%
+          \input{supplementary/generated_tables/#1}%
+        }{%
+          \input{#1}%
+        }%
+      }%
+    }%
+  }%
+}
+
+\providecommand{\suppincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \IfFileExists{\supplementarymaterialpath#2}{%
+      \includegraphics[#1]{\supplementarymaterialpath#2}%
+    }{%
+      \IfFileExists{figures/#2}{%
+        \includegraphics[#1]{figures/#2}%
+      }{%
+        \IfFileExists{../figures/#2}{%
+          \includegraphics[#1]{../figures/#2}%
+        }{%
+          \IfFileExists{../results/#2}{%
+            \includegraphics[#1]{../results/#2}%
+          }{%
+            \IfFileExists{../simulation/output/#2}{%
+              \includegraphics[#1]{../simulation/output/#2}%
+            }{%
+              \includegraphics[#1]{#2}%
+            }%
+          }%
+        }%
+      }%
+    }%
+  }%
+}
+
+\lstdefinestyle{rcode}{
+  basicstyle=\ttfamily\scriptsize,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{black!25},
+  backgroundcolor=\color{black!3},
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  aboveskip=0.8em,
+  belowskip=0.8em
+}
+
+\begin{center}
+{\Large Supplementary Information}\\[6pt]
+{\large Covariance nonstationarity is evident in spatial transcriptomics and provides a new categorization of spatially varying genes}\\[8pt]
+Puneet Velidi, Zhengxiao Wei, Shreena Kalaria, Celine Laumont, Brad Nelson, and Farouk Nathoo
+\end{center}
+
+\tableofcontents
+\clearpage
+
+\section{Abbreviations and Notation}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Abbreviations used in the supplementary material and additional files.}
+\label{tab:abbreviations}
+\begin{tabular}{p{0.16\linewidth}p{0.32\linewidth}p{0.42\linewidth}}
+\toprule
+Abbreviation & Expansion & Use\\
+\midrule
+GO & Gene Ontology & Controlled vocabulary used for gene-set enrichment analysis.\\
+GO ID & Gene Ontology identifier & Stable term identifier formatted as \texttt{GO:0000000}.\\
+GO BP & Gene Ontology Biological Process & GO sub-ontology analyzed with \texttt{clusterProfiler}.\\
+KEGG & Kyoto Encyclopedia of Genes and Genomes & Pathway database analyzed with \texttt{clusterProfiler} and MSigDB gene sets.\\
+hsa / mmu & Human / mouse KEGG organism codes & KEGG organism prefixes used for \textit{Homo sapiens} and \textit{Mus musculus}.\\
+GSEA & Gene set enrichment analysis & Rank-based enrichment test using genes ordered by \(\log BF_{\mathrm{NS,S}}\).\\
+ES & Enrichment score & Running-sum enrichment statistic reported by GSEA methods.\\
+NES & Normalized enrichment score & ES normalized for gene-set size and permutation behavior.\\
+FDR / padj & False discovery rate / adjusted \(p\)-value & Multiple-testing adjusted enrichment significance.\\
+MSigDB & Molecular Signatures Database & Source of Hallmark, KEGG, Reactome, and GO gene-set collections used in the fgsea analysis.\\
+fgsea & Fast gene set enrichment analysis & R package used for the MSigDB enrichment analysis.\\
+INLA & Integrated Nested Laplace Approximation & Approximate Bayesian inference engine used for model fitting.\\
+SPDE & Stochastic partial differential equation & Representation used to approximate Matern Gaussian random fields.\\
+BF & Bayes factor & Ratio of model marginal likelihoods.\\
+NS, S, NP & Nonstationary spatial, stationary spatial, stationary non-spatial & Model categories used in the Bayes factor comparisons.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+\section{Supplementary Methods}
+
+\subsection{Datasets and quality control}
+Spatial transcriptomics datasets were obtained as SpatialExperiment objects and analyzed at the gene-by-spot count matrix level. Re-release duplicates marked with \texttt{\_v3.13} were excluded to avoid analyzing the same tissue sample twice. For each retained dataset, genes were kept when they were detected in at least 0.5\% of spots and had total count at least 3 across the tissue section. The resulting analysis set included 13 datasets spanning human and mouse tissues (Supplementary Table~\ref{tab:dataset-summary}; Additional file 2).
+
+\subsection{Expression preprocessing}
+For each gene, counts were transformed with \texttt{log1p}. The transformed expression vector was mapped to normal scores by quantile normalization,
+\[
+z_i = \Phi^{-1}\{(r_i - 0.5)/n\},
+\]
+where \(r_i\) is the average rank of spot \(i\) among the \(n\) spots and \(\Phi^{-1}\) is the standard normal quantile function. A quadratic mean trend in tissue coordinates was removed before fitting covariance models:
+\[
+z_i = \beta_0 + \beta_1 x_i + \beta_2 y_i + \beta_3 x_i^2 + \beta_4 y_i^2 + \beta_5 x_i y_i + e_i.
+\]
+The residuals \(e_i\) were used as the response in the spatial covariance comparisons.
+
+\subsection{Spatial residual expression map plotting}
+Spatial residual expression maps show observed Visium spots only. The plotting background is not an H\&E image, tissue mask, or interpolated spatial surface; it is the white plotting panel from \texttt{ggplot2} with a light grey border. White space between or around points therefore indicates locations where no observed spot was plotted, not expression equal to zero.
+
+For each representative gene, the plotted value at each spot was the same residual expression quantity used in the spatial covariance analysis: raw counts were library-size normalized as
+\[
+\log_2\{ \mathrm{count}/(\mathrm{library\ size}/10^6) + 1\},
+\]
+rank-quantile normalized to normal scores, and detrended by subtracting the fitted quadratic coordinate trend \(x + y + x^2 + y^2 + xy\). Points were plotted at spatial coordinates \((x,-y)\) with a fixed aspect ratio so that the plotted tissue orientation matched the image-like coordinate convention used by the input SpatialExperiment objects. Spots are shown without outlines; only the scaled residual color is displayed.
+
+Colors were assigned with a diverging blue-white-red scale centered at zero residual. Negative residuals are blue (\texttt{\#2166AC}), residuals near zero are white, and positive residuals are red (\texttt{\#B2182B}). To keep color intensity roughly comparable across the residual expression maps, all panels were plotted on the same symmetric color scale with limits \([-2,2]\) in normal-score residual units. Residuals outside these limits were clipped to the nearest endpoint color.
+
+\subsection{SPDE mesh construction}
+A single two-dimensional INLA mesh was built per dataset and reused for all genes in that dataset. Mesh construction used spot coordinates with inner and outer maximum edge lengths set to one fifth and one third of the larger tissue-coordinate range, respectively, and a cutoff set to one twentieth of the smaller coordinate range:
+\[
+\texttt{max.edge} = \{\max(R_x,R_y)/5,\ \max(R_x,R_y)/3\}, \qquad
+\texttt{cutoff} = \min(R_x,R_y)/20,
+\]
+where \(R_x\) and \(R_y\) are the ranges of the observed spot coordinates in the horizontal and vertical dimensions. Reusing the same mesh within a dataset ensured that per-gene Bayes factors compared models on the same spatial discretization. Dataset-specific mesh settings and mesh sizes are shown in Supplementary Table~\ref{tab:mesh-parameters}.
+
+\subsection{Stationary and nonstationary Matern models}
+The stationary model used the SPDE representation of a Matern field with \(\alpha = 2\), constant \(\tau\), and constant \(\kappa\):
+\[
+\log \tau(s) = \theta_1, \qquad \log \kappa(s) = \theta_2.
+\]
+The nonstationary model used the same likelihood and mesh, but allowed the spatial range parameter to vary linearly across scaled mesh coordinates:
+\[
+\log \tau(s) = \theta_1, \qquad
+\log \kappa(s) = \theta_2 + \theta_3 \tilde{x}(s) + \theta_4 \tilde{y}(s).
+\]
+Both models were fit with a Gaussian likelihood using R-INLA. For each fit, the marginal likelihood reported by INLA was retained along with posterior summaries of \(\tau\), \(\kappa\), spatial variance, residual variance, and practical range. For \(\alpha=2\) in two dimensions, the reported stationary-equivalent summaries use
+\[
+\sigma_b^2 = \{4\pi \kappa^2\tau^2\}^{-1}, \qquad
+\rho = \sqrt{8}/\kappa .
+\]
+
+\subsection{Model-fitting code excerpts}
+The complete implementation is provided in \texttt{hpc/analysis\_functions.R}. The following code chunks show the core preprocessing, mesh construction, SPDE model definitions, INLA fitting call, and Bayes factor calculation used for each gene.
+
+\begin{lstlisting}[style=rcode,caption={Preprocessing and shared SPDE mesh construction.}]
+normalize_expression <- function(expr) {
+  expr_rank <- rank(expr, ties.method = "average")
+  qnorm((expr_rank - 0.5) / length(expr))
+}
+
+detrend_expression <- function(coords, expr) {
+  x_c <- coords$x - mean(coords$x)
+  y_c <- coords$y - mean(coords$y)
+  fit <- lm(expr ~ x_c + y_c + I(x_c^2) + I(y_c^2) + I(x_c * y_c),
+            data = data.frame(expr = expr, x_c = x_c, y_c = y_c))
+  expr - predict(fit)
+}
+
+create_spde_mesh <- function(coords) {
+  x_range <- diff(range(coords$x))
+  y_range <- diff(range(coords$y))
+  max_range <- max(x_range, y_range)
+  min_range <- min(x_range, y_range)
+
+  INLA::inla.mesh.2d(
+    loc = as.matrix(coords[, c("x", "y")]),
+    max.edge = c(max_range / 5, max_range / 3),
+    cutoff = min_range / 20
+  )
+}
+
+expr <- log1p(counts_mat[gene_idx, ])
+expr_proc <- normalize_expression(expr)
+expr_proc <- detrend_expression(coords, expr_proc)
+mesh <- create_spde_mesh(coords)
+\end{lstlisting}
+
+\begin{lstlisting}[style=rcode,caption={Stationary Matern SPDE model and INLA fitting call.}]
+fit_stationary_matern <- function(coords, expr, mesh) {
+  spde <- INLA::inla.spde2.matern(
+    mesh = mesh,
+    alpha = 2,
+    B.tau = matrix(c(0, 1, 0), nrow = 1, ncol = 3),
+    B.kappa = matrix(c(0, 0, 1), nrow = 1, ncol = 3)
+  )
+
+  A <- INLA::inla.spde.make.A(
+    mesh = mesh,
+    loc = as.matrix(coords[, c("x", "y")])
+  )
+  s.index <- INLA::inla.spde.make.index(
+    name = "spatial",
+    n.spde = spde$n.spde
+  )
+
+  stack <- INLA::inla.stack(
+    data = list(y = expr),
+    A = list(A, 1),
+    effects = list(s.index, list(intercept = rep(1, length(expr)))),
+    tag = "est"
+  )
+
+  INLA::inla(
+    y ~ -1 + intercept + f(spatial, model = spde),
+    data = INLA::inla.stack.data(stack, spde = spde),
+    family = "gaussian",
+    control.predictor = list(A = INLA::inla.stack.A(stack), compute = TRUE),
+    control.compute = list(config = TRUE, dic = TRUE, cpo = TRUE)
+  )
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=rcode,caption={Nonstationary Matern SPDE model and INLA fitting call.}]
+fit_nonstationary_matern <- function(coords, expr, mesh) {
+  n_mesh <- mesh$n
+  mesh_x <- as.vector(scale(mesh$loc[, 1]))
+  mesh_y <- as.vector(scale(mesh$loc[, 2]))
+
+  B.tau <- matrix(c(0, 1, 0, 0, 0), nrow = n_mesh, ncol = 5, byrow = TRUE)
+  B.kappa <- cbind(
+    rep(0, n_mesh),
+    rep(0, n_mesh),
+    rep(1, n_mesh),
+    mesh_x,
+    mesh_y
+  )
+
+  spde <- INLA::inla.spde2.matern(
+    mesh = mesh,
+    alpha = 2,
+    B.tau = B.tau,
+    B.kappa = B.kappa
+  )
+
+  A <- INLA::inla.spde.make.A(
+    mesh = mesh,
+    loc = as.matrix(coords[, c("x", "y")])
+  )
+  s.index <- INLA::inla.spde.make.index(
+    name = "spatial",
+    n.spde = spde$n.spde
+  )
+
+  stack <- INLA::inla.stack(
+    data = list(y = expr),
+    A = list(A, 1),
+    effects = list(s.index, list(intercept = rep(1, length(expr)))),
+    tag = "est"
+  )
+
+  INLA::inla(
+    y ~ -1 + intercept + f(spatial, model = spde),
+    data = INLA::inla.stack.data(stack, spde = spde),
+    family = "gaussian",
+    control.predictor = list(A = INLA::inla.stack.A(stack), compute = TRUE),
+    control.compute = list(config = TRUE, dic = TRUE, cpo = TRUE)
+  )
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=rcode,caption={Marginal likelihood Bayes factor and stationary-equivalent summaries.}]
+fit_s <- fit_stationary_matern(coords, expr_proc, mesh)
+fit_ns <- fit_nonstationary_matern(coords, expr_proc, mesh)
+
+log_ml_stationary <- fit_s$mlik[1, 1]
+log_ml_nonstationary <- fit_ns$mlik[1, 1]
+
+log_bayes_factor <- log_ml_nonstationary - log_ml_stationary
+bayes_factor <- exp(log_bayes_factor)
+
+hyper <- fit_s$summary.hyperpar
+theta1 <- hyper$mean[grep("Theta1 for spatial", rownames(hyper))]
+theta2 <- hyper$mean[grep("Theta2 for spatial", rownames(hyper))]
+tau <- exp(theta1)
+kappa <- exp(theta2)
+
+sigma_b_sq <- 1 / (4 * pi * kappa^2 * tau^2)
+spatial_range <- sqrt(8) / kappa
+\end{lstlisting}
+
+\subsection{Bayes factor model comparisons}
+The primary comparison was nonstationary spatial covariance versus stationary spatial covariance:
+\[
+\log BF_{\mathrm{NS,S}} = \log p(y \mid M_{\mathrm{NS}}) - \log p(y \mid M_{\mathrm{S}}).
+\]
+Genes with \(BF_{\mathrm{NS,S}}>1\) were classified as favoring the nonstationary spatial model. Genes with \(BF_{\mathrm{NS,S}}<1\) were classified as favoring the stationary spatial model in the primary two-model comparison. Evidence strength was summarized using thresholds \(BF=3,10,30,100\), corresponding to anecdotal, moderate, strong, very strong, and extreme evidence categories. For datasets with non-spatial fits available, genes favoring the stationary spatial model were further compared against a stationary non-spatial model by \(\log BF_{\mathrm{S,NP}} = \log p(y \mid M_{\mathrm{S}})-\log p(y \mid M_{\mathrm{NP}})\). This second comparison produced the final three-way categories: nonstationary spatial, stationary spatial, and stationary non-spatial.
+
+\subsection{Simulation design}
+Simulation studies were performed for Human Breast Cancer (ILC) and Human Ovarian Cancer to evaluate the false discovery rate and average power of Bayes factor thresholds. Genes with \(BF_{\mathrm{NS,S}}\le 1\) in the real-data analysis were treated as null genes and simulated from the fitted stationary Matern model. Genes with \(BF_{\mathrm{NS,S}}>1\) were treated as alternative genes and simulated from the fitted nonstationary SPDE model when fitted nonstationary coefficients were available. Each simulation replicate generated expression for all genes in the dataset, refit the stationary and nonstationary models, and recomputed \(BF_{\mathrm{NS,S}}\). One hundred replicates were aggregated per dataset. False discovery rate and average power were then evaluated across Bayes factor thresholds \(c\), with the decision rule \(BF_{\mathrm{NS,S}}>c\).
+
+\subsection{Gene-set enrichment analysis}
+Gene-set enrichment analysis ranked genes by \(\log BF_{\mathrm{NS,S}}\), so positive enrichment scores indicate gene sets enriched among genes favoring nonstationary covariance and negative enrichment scores indicate gene sets enriched among genes favoring stationary covariance. GO biological process and KEGG analyses were run with \texttt{clusterProfiler} using organism-specific annotation databases. A second enrichment analysis used MSigDB Hallmark, KEGG, Reactome, and GO biological process collections with \texttt{fgsea}. Full enrichment outputs are provided as Additional files 6 and 7.
+
+\section{Supplementary Tables}
+
+\suppinputtable{dataset_summary_table.tex}
+
+\begin{landscape}
+\suppinputtable{inla_mesh_parameters_table.tex}
+\end{landscape}
+
+\suppinputtable{simulation_threshold_table.tex}
+
+\begin{landscape}
+\suppinputtable{go_kegg_identifier_expansions_table.tex}
+\end{landscape}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Additional files supplied with the manuscript.}\label{tab:additional-files}
+\begin{tabular}{p{0.19\linewidth}p{0.09\linewidth}p{0.24\linewidth}p{0.38\linewidth}}
+\toprule
+File & Format & Title & Description\\
+\midrule
+Additional file 1 & PDF & Supplementary Information & Supplementary methods, figures, legends, and summary tables.\\
+Additional file 2 & CSV & Dataset manifest and analysis summary & Dataset labels, sample metadata, number of spots and genes, ExperimentHub metadata where available, and dataset-level nonstationarity summaries.\\
+Additional file 3 & CSV & Per-gene Bayes factor and category summary & Per-gene log Bayes factors, evidence strengths, nonstationary-versus-stationary model calls, available stationary-versus-non-spatial comparisons, and final model category.\\
+Additional file 4 & CSV & Evidence-strength summary & Counts and percentages by dataset, favored model, and Bayes factor evidence strength for the nonstationary versus stationary comparison.\\
+Additional file 5 & CSV & Stationary versus non-spatial summary & Counts and percentages of stationary-favored genes that further favor stationary spatial or stationary non-spatial models.\\
+Additional file 6 & CSV & clusterProfiler GSEA results & GO biological process and KEGG enrichment results from genes ranked by \(\log BF_{\mathrm{NS,S}}\).\\
+Additional file 7 & CSV & MSigDB fgsea results & Hallmark, KEGG, Reactome, and GO biological process enrichment results from genes ranked by \(\log BF_{\mathrm{NS,S}}\).\\
+Additional file 8 & CSV & Simulation FDR and power curves & Aggregated false discovery rate and average power across Bayes factor thresholds.\\
+Additional file 9 & CSV & Simulation replicate summaries & Per-replicate false discovery rate and power at \(c=1\).\\
+Additional file 10 & CSV & Software reproducibility manifest & Analysis scripts, workflow roles, file sizes, and MD5 checksums.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{landscape}
+\begin{center}
+\textbf{Tissue image overview}\\[4pt]
+\suppincludegraphics[width=0.96\linewidth,height=0.74\textheight,keepaspectratio]{tissue_image_overview.png}
+
+\small
+\textbf{Low-resolution tissue images for the analyzed datasets.} Images are the low-resolution tissue images stored in the corresponding ExperimentHub SpatialExperiment objects. Images are arranged by species and labeled by tissue/sample type. The local analysis files used for model fitting do not retain image payloads, so this panel was regenerated from the source ExperimentHub records; the current ExperimentHub replacement records EH9628 and EH9629 were used for Visium\_humanDLPFC and Visium\_mouseCoronal because the original EH9516 and EH9517 records have been removed.
+\end{center}
+\end{landscape}
+
+\clearpage
+\section{Supplementary Figures}
+
+\begin{landscape}
+\begin{figure}[H]
+\centering
+\suppincludegraphics[width=0.90\linewidth,height=0.70\textheight,keepaspectratio]{spatial_maps_breast_ovarian.png}
+\caption{\textbf{Representative residual spatial maps for Human Breast Cancer (ILC), Human Ovarian Cancer, and representative mouse brain datasets.} Rows show genes selected as representative examples of nonstationary spatial, stationary spatial, and stationary non-spatial categories. Values are quantile-normalized, polynomial-detrended residuals plotted over spatial coordinates on a common \([-2,2]\) residual color scale.}
+\label{fig:s1}
+\end{figure}
+\end{landscape}
+
+\begin{landscape}
+\begin{figure}[H]
+\centering
+\suppincludegraphics[width=0.90\linewidth,height=0.70\textheight,keepaspectratio]{spatial_maps_human.png}
+\caption{\textbf{Representative residual spatial maps for additional human datasets.} For each tissue, rows show representative genes from the nonstationary spatial, stationary spatial, and stationary non-spatial categories when available. All panels use a common \([-2,2]\) residual color scale.}
+\label{fig:s2}
+\end{figure}
+\end{landscape}
+
+\begin{landscape}
+\begin{figure}[H]
+\centering
+\suppincludegraphics[width=0.90\linewidth,height=0.70\textheight,keepaspectratio]{spatial_maps_murine.png}
+\caption{\textbf{Representative residual spatial maps for murine datasets.} For each tissue, rows show representative genes from the nonstationary spatial, stationary spatial, and stationary non-spatial categories when available. All panels use a common \([-2,2]\) residual color scale.}
+\label{fig:s3}
+\end{figure}
+\end{landscape}
+
+\begin{figure}[H]
+\centering
+\suppincludegraphics[width=0.48\linewidth]{HumanBreastCancerILC_bf_distribution.png}
+\suppincludegraphics[width=0.48\linewidth]{HumanOvarianCancer_bf_distribution.png}
+\caption{\textbf{Bayes factor distribution box plots in the two simulation source datasets.} Distributions show the empirical separation of genes favoring the stationary and nonstationary spatial models in Human Breast Cancer (ILC) and Human Ovarian Cancer.}
+\label{fig:s4}
+\end{figure}

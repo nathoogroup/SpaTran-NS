@@ -1,0 +1,131 @@
+"dataset_name","model_favored_nonstationary_vs_stationary","bf_strength_nonstationary_vs_stationary","n_genes","dataset_total_genes","pct_of_dataset"
+"HumanBreastCancerILC","nonstationary_spatial","Extreme",4561,16570,27.5256487628244
+"HumanBreastCancerILC","nonstationary_spatial","Very strong",813,16570,4.90645745322873
+"HumanBreastCancerILC","nonstationary_spatial","Strong",807,16570,4.87024743512372
+"HumanBreastCancerILC","nonstationary_spatial","Moderate",1018,16570,6.14363307181654
+"HumanBreastCancerILC","nonstationary_spatial","Anecdotal",1085,16570,6.54797827398914
+"HumanBreastCancerILC","stationary_spatial","Extreme",3287,16570,19.8370549185275
+"HumanBreastCancerILC","stationary_spatial","Very strong",1341,16570,8.09293904646952
+"HumanBreastCancerILC","stationary_spatial","Strong",1224,16570,7.38684369342185
+"HumanBreastCancerILC","stationary_spatial","Moderate",1309,16570,7.89981894990948
+"HumanBreastCancerILC","stationary_spatial","Anecdotal",1125,16570,6.7893783946892
+"HumanColorectalCancer","nonstationary_spatial","Extreme",1574,16240,9.69211822660099
+"HumanColorectalCancer","nonstationary_spatial","Very strong",122,16240,0.751231527093596
+"HumanColorectalCancer","nonstationary_spatial","Strong",147,16240,0.905172413793103
+"HumanColorectalCancer","nonstationary_spatial","Moderate",186,16240,1.14532019704433
+"HumanColorectalCancer","nonstationary_spatial","Anecdotal",191,16240,1.17610837438424
+"HumanColorectalCancer","stationary_spatial","Extreme",11641,16240,71.6810344827586
+"HumanColorectalCancer","stationary_spatial","Very strong",1069,16240,6.58251231527094
+"HumanColorectalCancer","stationary_spatial","Strong",616,16240,3.79310344827586
+"HumanColorectalCancer","stationary_spatial","Moderate",427,16240,2.62931034482759
+"HumanColorectalCancer","stationary_spatial","Anecdotal",267,16240,1.64408866995074
+"HumanGlioblastoma","nonstationary_spatial","Extreme",1150,13376,8.59748803827751
+"HumanGlioblastoma","nonstationary_spatial","Very strong",141,13376,1.05412679425837
+"HumanGlioblastoma","nonstationary_spatial","Strong",143,13376,1.06907894736842
+"HumanGlioblastoma","nonstationary_spatial","Moderate",193,13376,1.44288277511962
+"HumanGlioblastoma","nonstationary_spatial","Anecdotal",254,13376,1.89892344497608
+"HumanGlioblastoma","stationary_spatial","Extreme",7995,13376,59.7712320574163
+"HumanGlioblastoma","stationary_spatial","Very strong",1623,13376,12.1336722488038
+"HumanGlioblastoma","stationary_spatial","Strong",941,13376,7.03498803827751
+"HumanGlioblastoma","stationary_spatial","Moderate",591,13376,4.41836124401914
+"HumanGlioblastoma","stationary_spatial","Anecdotal",345,13376,2.57924641148325
+"HumanHeart","nonstationary_spatial","Extreme",226,13691,1.65071945073406
+"HumanHeart","nonstationary_spatial","Very strong",40,13691,0.292162734643196
+"HumanHeart","nonstationary_spatial","Strong",43,13691,0.314074939741436
+"HumanHeart","nonstationary_spatial","Moderate",78,13691,0.569717332554233
+"HumanHeart","nonstationary_spatial","Anecdotal",85,13691,0.620845811116792
+"HumanHeart","stationary_spatial","Extreme",7792,13691,56.9133007084946
+"HumanHeart","stationary_spatial","Very strong",3009,13691,21.9779417135344
+"HumanHeart","stationary_spatial","Strong",1685,13691,12.3073551968446
+"HumanHeart","stationary_spatial","Moderate",526,13691,3.84193996055803
+"HumanHeart","stationary_spatial","Anecdotal",207,13691,1.51194215177854
+"HumanLymphNode","nonstationary_spatial","Extreme",185,4410,4.19501133786848
+"HumanLymphNode","nonstationary_spatial","Very strong",39,4410,0.884353741496599
+"HumanLymphNode","nonstationary_spatial","Strong",61,4410,1.38321995464853
+"HumanLymphNode","nonstationary_spatial","Moderate",102,4410,2.31292517006803
+"HumanLymphNode","nonstationary_spatial","Anecdotal",132,4410,2.99319727891156
+"HumanLymphNode","stationary_spatial","Extreme",2149,4410,48.7301587301587
+"HumanLymphNode","stationary_spatial","Very strong",737,4410,16.7120181405896
+"HumanLymphNode","stationary_spatial","Strong",491,4410,11.1337868480726
+"HumanLymphNode","stationary_spatial","Moderate",312,4410,7.07482993197279
+"HumanLymphNode","stationary_spatial","Anecdotal",202,4410,4.58049886621315
+"HumanOvarianCancer","nonstationary_spatial","Extreme",433,16690,2.59436788496105
+"HumanOvarianCancer","nonstationary_spatial","Very strong",79,16690,0.473337327741162
+"HumanOvarianCancer","nonstationary_spatial","Strong",95,16690,0.569203115638107
+"HumanOvarianCancer","nonstationary_spatial","Moderate",124,16690,0.742959856201318
+"HumanOvarianCancer","nonstationary_spatial","Anecdotal",152,16690,0.910724985020971
+"HumanOvarianCancer","stationary_spatial","Extreme",12923,16690,77.4295985620132
+"HumanOvarianCancer","stationary_spatial","Very strong",1457,16690,8.72977831036549
+"HumanOvarianCancer","stationary_spatial","Strong",797,16690,4.77531455961654
+"HumanOvarianCancer","stationary_spatial","Moderate",408,16690,2.44457759137208
+"HumanOvarianCancer","stationary_spatial","Anecdotal",222,16690,1.3301378070701
+"HumanSpinalCord","nonstationary_spatial","Extreme",2195,16061,13.6666459124588
+"HumanSpinalCord","nonstationary_spatial","Very strong",308,16061,1.91768881140651
+"HumanSpinalCord","nonstationary_spatial","Strong",313,16061,1.94882012328
+"HumanSpinalCord","nonstationary_spatial","Moderate",433,16061,2.69597160824357
+"HumanSpinalCord","nonstationary_spatial","Anecdotal",539,16061,3.3559554199614
+"HumanSpinalCord","stationary_spatial","Extreme",6893,16061,42.9176265487828
+"HumanSpinalCord","stationary_spatial","Very strong",2318,16061,14.4324761845464
+"HumanSpinalCord","stationary_spatial","Strong",1400,16061,8.71676732457506
+"HumanSpinalCord","stationary_spatial","Moderate",1013,16061,6.30720378556752
+"HumanSpinalCord","stationary_spatial","Anecdotal",649,16061,4.04084428117801
+"MouseBrainCoronal","nonstationary_spatial","Extreme",194,1535,12.6384364820847
+"MouseBrainCoronal","nonstationary_spatial","Very strong",21,1535,1.36807817589577
+"MouseBrainCoronal","nonstationary_spatial","Strong",30,1535,1.95439739413681
+"MouseBrainCoronal","nonstationary_spatial","Moderate",35,1535,2.28013029315961
+"MouseBrainCoronal","nonstationary_spatial","Anecdotal",32,1535,2.08469055374593
+"MouseBrainCoronal","stationary_spatial","Extreme",865,1535,56.3517915309446
+"MouseBrainCoronal","stationary_spatial","Very strong",158,1535,10.2931596091205
+"MouseBrainCoronal","stationary_spatial","Strong",89,1535,5.79804560260586
+"MouseBrainCoronal","stationary_spatial","Moderate",62,1535,4.03908794788274
+"MouseBrainCoronal","stationary_spatial","Anecdotal",49,1535,3.19218241042345
+"MouseBrainSagittalAnterior","nonstationary_spatial","Extreme",178,1882,9.45802337938363
+"MouseBrainSagittalAnterior","nonstationary_spatial","Very strong",22,1882,1.16896918172157
+"MouseBrainSagittalAnterior","nonstationary_spatial","Strong",28,1882,1.48777895855473
+"MouseBrainSagittalAnterior","nonstationary_spatial","Moderate",26,1882,1.38150903294368
+"MouseBrainSagittalAnterior","nonstationary_spatial","Anecdotal",40,1882,2.12539851222104
+"MouseBrainSagittalAnterior","stationary_spatial","Extreme",967,1882,51.3815090329437
+"MouseBrainSagittalAnterior","stationary_spatial","Very strong",316,1882,16.7906482465462
+"MouseBrainSagittalAnterior","stationary_spatial","Strong",155,1882,8.23591923485654
+"MouseBrainSagittalAnterior","stationary_spatial","Moderate",96,1882,5.1009564293305
+"MouseBrainSagittalAnterior","stationary_spatial","Anecdotal",54,1882,2.86928799149841
+"MouseBrainSagittalPosterior","nonstationary_spatial","Extreme",1693,16143,10.4875178095769
+"MouseBrainSagittalPosterior","nonstationary_spatial","Very strong",244,16143,1.51149104875178
+"MouseBrainSagittalPosterior","nonstationary_spatial","Strong",266,16143,1.64777302855727
+"MouseBrainSagittalPosterior","nonstationary_spatial","Moderate",366,16143,2.26723657312767
+"MouseBrainSagittalPosterior","nonstationary_spatial","Anecdotal",474,16143,2.93625720126371
+"MouseBrainSagittalPosterior","stationary_spatial","Extreme",7333,16143,45.4252617233476
+"MouseBrainSagittalPosterior","stationary_spatial","Very strong",2405,16143,14.8980982469182
+"MouseBrainSagittalPosterior","stationary_spatial","Strong",1529,16143,9.47159759648145
+"MouseBrainSagittalPosterior","stationary_spatial","Moderate",1119,16143,6.9317970637428
+"MouseBrainSagittalPosterior","stationary_spatial","Anecdotal",714,16143,4.42296970823267
+"MouseKidneyCoronal","nonstationary_spatial","Extreme",523,16347,3.19936379763871
+"MouseKidneyCoronal","nonstationary_spatial","Very strong",45,16347,0.275279867865663
+"MouseKidneyCoronal","nonstationary_spatial","Strong",54,16347,0.330335841438796
+"MouseKidneyCoronal","nonstationary_spatial","Moderate",83,16347,0.507738422952224
+"MouseKidneyCoronal","nonstationary_spatial","Anecdotal",107,16347,0.654554352480577
+"MouseKidneyCoronal","stationary_spatial","Extreme",10822,16347,66.2017495564936
+"MouseKidneyCoronal","stationary_spatial","Very strong",2630,16347,16.0885789441488
+"MouseKidneyCoronal","stationary_spatial","Strong",1415,16347,8.65602251177586
+"MouseKidneyCoronal","stationary_spatial","Moderate",475,16347,2.905731938582
+"MouseKidneyCoronal","stationary_spatial","Anecdotal",193,16347,1.18064476662385
+"Visium_humanDLPFC","nonstationary_spatial","Extreme",1008,14932,6.75060273238682
+"Visium_humanDLPFC","nonstationary_spatial","Very strong",229,14932,1.53361907313153
+"Visium_humanDLPFC","nonstationary_spatial","Strong",349,14932,2.33726225555853
+"Visium_humanDLPFC","nonstationary_spatial","Moderate",541,14932,3.62309134744174
+"Visium_humanDLPFC","nonstationary_spatial","Anecdotal",681,14932,4.56067506027324
+"Visium_humanDLPFC","stationary_spatial","Extreme",5131,14932,34.3624430752746
+"Visium_humanDLPFC","stationary_spatial","Very strong",2618,14932,17.5328154299491
+"Visium_humanDLPFC","stationary_spatial","Strong",1790,14932,11.9876774712028
+"Visium_humanDLPFC","stationary_spatial","Moderate",1536,14932,10.2866327350656
+"Visium_humanDLPFC","stationary_spatial","Anecdotal",1049,14932,7.02518081971605
+"Visium_mouseCoronal","nonstationary_spatial","Extreme",1633,16208,10.0752714708786
+"Visium_mouseCoronal","nonstationary_spatial","Very strong",197,16208,1.21544916090819
+"Visium_mouseCoronal","nonstationary_spatial","Strong",228,16208,1.40671273445212
+"Visium_mouseCoronal","nonstationary_spatial","Moderate",325,16208,2.00518262586377
+"Visium_mouseCoronal","nonstationary_spatial","Anecdotal",349,16208,2.15325765054294
+"Visium_mouseCoronal","stationary_spatial","Extreme",10290,16208,63.4871668311945
+"Visium_mouseCoronal","stationary_spatial","Very strong",1311,16208,8.0885982230997
+"Visium_mouseCoronal","stationary_spatial","Strong",815,16208,5.02838104639684
+"Visium_mouseCoronal","stationary_spatial","Moderate",620,16208,3.82527147087858
+"Visium_mouseCoronal","stationary_spatial","Anecdotal",440,16208,2.7147087857848
