@@ -73,9 +73,19 @@ filter. Consequently, `Visium_mouseCoronal` retains all 4,992 supplied spots.
 `MouseBrainCoronal`, a separate tissue-only representation of the same section,
 is excluded so that this biological sample is counted once.
 
-### Repair the three retained historically truncated datasets
+### One-time schema-v3 refresh and historical truncation indices
 
-The affected datasets now have stable indices:
+This change adds required model fields and implementation fingerprints, so the
+existing result files are legacy even when their row counts are complete. Run
+the full 12-task array once before using `submit_combine.sbatch`:
+
+```bash
+mkdir -p logs
+sbatch --export=ALL,OVERWRITE=1 hpc/submit_analysis.sbatch
+```
+
+The three datasets affected by the historical truncation bug have stable
+indices:
 
 | Index | Dataset | Historical rows saved | Expected filtered genes |
 |---:|---|---:|---:|
@@ -83,17 +93,17 @@ The affected datasets now have stable indices:
 | 5 | HumanLymphNode | 4,406 | 18,295 |
 | 8 | MouseBrainSagittalAnterior | 1,880 | 16,431 |
 
-Rerun those tasks with:
+After a complete schema-v3 result set exists, those indices can be used for a
+targeted retry if any of the three tasks needs to be replaced:
 
 ```bash
 mkdir -p logs
 sbatch --array=3,5,8 --export=ALL,OVERWRITE=1 hpc/submit_analysis.sbatch
 ```
 
-The other nine retained old files were not truncated in the historical logs, but they
-predate the strict `gene_index`/`gene_id` completion schema. Run the full array
-once before using `submit_combine.sbatch` to produce a wholly validated combined
-file.
+The other nine retained old files were not truncated in the historical logs,
+but they also predate the strict completion schema and cannot be mixed with the
+new outputs.
 
 ## Direct usage
 

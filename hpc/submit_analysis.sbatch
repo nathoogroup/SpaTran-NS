@@ -35,8 +35,9 @@ set -euo pipefail
 #   mkdir -p logs
 #   sbatch hpc/submit_analysis.sbatch
 #
-# To rerun the three retained datasets affected by the historical truncation bug:
-#   sbatch --array=3,5,8 --export=ALL,OVERWRITE=1 hpc/submit_analysis.sbatch
+# This schema-v3 update requires one full 1-12 refresh with OVERWRITE=1.
+# Indices 3,5,8 identify the historically truncated datasets and are useful
+# only for targeted retries after a complete schema-v3 result set exists.
 # =============================================================================
 
 echo "=========================================="
