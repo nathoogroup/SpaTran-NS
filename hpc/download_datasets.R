@@ -2,8 +2,8 @@
 # =============================================================================
 # Download SpatialExperiment Datasets from ExperimentHub
 # =============================================================================
-# This script downloads ALL available SpatialExperiment datasets
-# from ExperimentHub and saves them locally for HPC analysis.
+# This script downloads available Visium resources from ExperimentHub, saves
+# SpatialExperiment objects locally, and verifies the study dataset manifest.
 #
 # Usage: Rscript download_datasets.R [output_dir]
 # =============================================================================
@@ -11,6 +11,46 @@
 # Parse command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 output_dir <- if (length(args) >= 1) args[1] else "data/spatial_datasets"
+
+script_flag <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+script_dir <- if (length(script_flag) > 0L) {
+  dirname(normalizePath(sub("^--file=", "", script_flag[1])))
+} else {
+  normalizePath("hpc")
+}
+dataset_list_file <- Sys.getenv(
+  "ANALYSIS_DATASET_LIST",
+  unset = file.path(script_dir, "analysis_datasets.txt")
+)
+if (!file.exists(dataset_list_file)) {
+  stop("Dataset list not found: ", dataset_list_file, call. = FALSE)
+}
+required_datasets <- trimws(readLines(dataset_list_file, warn = FALSE))
+required_datasets <- required_datasets[
+  nzchar(required_datasets) & !startsWith(required_datasets, "#")
+]
+if (!length(required_datasets) || anyDuplicated(required_datasets)) {
+  stop("Dataset list must contain unique study dataset basenames", call. = FALSE)
+}
+
+read_spatial_rds <- function(path) {
+  if (!file.exists(path)) return(NULL)
+  tryCatch(readRDS(path), error = function(e) NULL)
+}
+
+save_spatial_rds_atomic <- function(object, path) {
+  tmp_path <- tempfile(
+    pattern = paste0(".", basename(path), "."),
+    tmpdir = dirname(path),
+    fileext = ".tmp"
+  )
+  on.exit(if (file.exists(tmp_path)) unlink(tmp_path), add = TRUE)
+  saveRDS(object, tmp_path)
+  if (!file.rename(tmp_path, path)) {
+    stop("Could not atomically replace dataset file: ", path, call. = FALSE)
+  }
+  invisible(path)
+}
 
 # Create output directory
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -74,11 +114,16 @@ for (i in seq_along(spe_query)) {
   safe_name <- substr(safe_name, 1, 50)
   output_file <- file.path(output_dir, paste0(safe_name, ".rds"))
   
-  # Skip if already downloaded
+  # Reuse only a readable SpatialExperiment. A corrupt or wrong-class file is
+  # downloaded again and atomically replaced.
   if (file.exists(output_file)) {
-    cat("  Already downloaded, skipping...\n")
-    successful_downloads <- successful_downloads + 1
-    next
+    existing <- read_spatial_rds(output_file)
+    if (inherits(existing, "SpatialExperiment")) {
+      cat("  Existing SpatialExperiment is readable, skipping...\n")
+      successful_downloads <- successful_downloads + 1
+      next
+    }
+    cat("  Existing file is invalid; downloading a replacement...\n")
   }
   
   # Download and save
@@ -106,7 +151,7 @@ for (i in seq_along(spe_query)) {
 
     # Save to RDS
     cat("  Saving to:", output_file, "\n")
-    base::saveRDS(obj, output_file)
+    save_spatial_rds_atomic(obj, output_file)
     
     successful_downloads <- successful_downloads + 1
     cat("  SUCCESS\n")
@@ -134,8 +179,27 @@ log_data <- list(
   timestamp = Sys.time(),
   total_queried = length(spe_query),
   successful = successful_downloads,
-  failed = failed_downloads
+  failed = failed_downloads,
+  required_datasets = required_datasets
 )
 saveRDS(log_data, file.path(output_dir, "download_log.rds"))
 
-cat("\nDone! Datasets saved to:", output_dir, "\n")
+required_paths <- file.path(output_dir, paste0(required_datasets, ".rds"))
+required_valid <- vapply(required_paths, function(path) {
+  object <- read_spatial_rds(path)
+  inherits(object, "SpatialExperiment")
+}, logical(1))
+if (!all(required_valid)) {
+  stop(
+    "Required study datasets are missing or invalid: ",
+    paste(basename(required_paths[!required_valid]), collapse = ", "),
+    call. = FALSE
+  )
+}
+
+if (length(failed_downloads) > 0L) {
+  cat("\nOptional query hits failed or were not SpatialExperiment objects; ",
+      "all required study datasets are present.\n", sep = "")
+}
+cat("\nDone! All", length(required_datasets),
+    "required study datasets are available in:", output_dir, "\n")

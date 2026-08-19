@@ -168,6 +168,35 @@ fit_nonstationary_matern <- function(coords, expr, mesh = NULL, verbose = FALSE)
   list(result = result, mesh = mesh, spde = spde, stack = stack)
 }
 
+# --- Non-spatial Gaussian model ---------------------------------------------
+
+fit_nonspatial_gaussian <- function(expr, verbose = FALSE) {
+  INLA::inla(
+    formula         = y ~ 1,
+    data            = data.frame(y = as.numeric(expr)),
+    family          = "gaussian",
+    control.compute = list(config = TRUE),
+    verbose         = verbose
+  )
+}
+
+extract_nonspatial_components <- function(fit_result) {
+  hyper <- fit_result$summary.hyperpar
+  noise_idx <- grep(
+    "Precision for the Gaussian",
+    rownames(hyper),
+    ignore.case = TRUE
+  )
+  intercept_idx <- match("(Intercept)", rownames(fit_result$summary.fixed))
+  if (is.na(intercept_idx)) intercept_idx <- 1L
+
+  list(
+    log_marginal_likelihood = fit_result$mlik[1, 1],
+    sigma_eps_sq = if (length(noise_idx)) 1 / hyper$mean[noise_idx[1]] else NA_real_,
+    mu = fit_result$summary.fixed$mean[intercept_idx]
+  )
+}
+
 # --- Extract variance components --------------------------------------------
 #
 # For inla.spde2.matern with alpha=2 (nu=1, d=2):
@@ -209,6 +238,32 @@ extract_variance_components <- function(fit_result) {
     log_marginal_likelihood = log_ml,
     hyperparameters         = hyper
   )
+}
+
+# --- Extract nonstationary SPDE thetas ---------------------------------------
+#
+# For the nonstationary Matern (Ingebrigtsen et al. 2014):
+#   log(tau(s))   = theta1
+#   log(kappa(s)) = theta2 + theta3*x(s) + theta4*y(s)
+#
+# Returns theta1, theta2, theta3, theta4 from the INLA fit (for simulation).
+# Used only when the fit has 4 spatial thetas (nonstationary model).
+
+extract_nonstationary_thetas <- function(fit_result) {
+  hyper <- fit_result$summary.hyperpar
+  rn   <- rownames(hyper)
+
+  theta1_idx <- grep("^Theta1 for spatial", rn, ignore.case = TRUE)
+  theta2_idx <- grep("^Theta2 for spatial", rn, ignore.case = TRUE)
+  theta3_idx <- grep("^Theta3 for spatial", rn, ignore.case = TRUE)
+  theta4_idx <- grep("^Theta4 for spatial", rn, ignore.case = TRUE)
+
+  theta1 <- if (length(theta1_idx) > 0) hyper$mean[theta1_idx[1]] else NA_real_
+  theta2 <- if (length(theta2_idx) > 0) hyper$mean[theta2_idx[1]] else NA_real_
+  theta3 <- if (length(theta3_idx) > 0) hyper$mean[theta3_idx[1]] else NA_real_
+  theta4 <- if (length(theta4_idx) > 0) hyper$mean[theta4_idx[1]] else NA_real_
+
+  list(theta1 = theta1, theta2 = theta2, theta3 = theta3, theta4 = theta4)
 }
 
 # --- Bayes factor (Wagenmakers / Jeffreys scale) ----------------------------
@@ -254,11 +309,15 @@ analyze_gene_nonstationarity <- function(coords, expr, gene_name = NULL,
 
   fit_stat <- fit_stationary_matern(coords, expr_proc, mesh = mesh, verbose = verbose)
   fit_ns   <- fit_nonstationary_matern(coords, expr_proc, mesh = mesh, verbose = verbose)
+  fit_nonspatial <- fit_nonspatial_gaussian(expr_proc, verbose = verbose)
 
   res_stat <- extract_variance_components(fit_stat$result)
   res_ns   <- extract_variance_components(fit_ns$result)
+  res_nonspatial <- extract_nonspatial_components(fit_nonspatial)
   bf       <- calculate_bayes_factor(res_stat$log_marginal_likelihood,
                                      res_ns$log_marginal_likelihood)
+
+  thetas_ns <- extract_nonstationary_thetas(fit_ns$result)
 
   data.frame(
     gene_name                  = ifelse(is.null(gene_name), "unknown", gene_name),
@@ -272,22 +331,61 @@ analyze_gene_nonstationarity <- function(coords, expr, gene_name = NULL,
     range_nonstationary        = res_ns$spatial_range,
     prop_spatial_nonstationary = res_ns$prop_spatial,
     log_ml_nonstationary       = res_ns$log_marginal_likelihood,
+    theta1_ns                  = thetas_ns$theta1,
+    theta2_ns                  = thetas_ns$theta2,
+    theta3_ns                  = thetas_ns$theta3,
+    theta4_ns                  = thetas_ns$theta4,
+    log_ml_nonspatial          = res_nonspatial$log_marginal_likelihood,
+    sigma_eps_sq_nonspatial    = res_nonspatial$sigma_eps_sq,
+    mu_nonspatial              = res_nonspatial$mu,
     log_bayes_factor           = bf$log_bayes_factor,
     bayes_factor               = bf$bayes_factor,
     bf_interpretation          = bf$interpretation,
+    error_message              = NA_character_,
     stringsAsFactors           = FALSE
   )
 }
 
 # --- Safe wrapper for parallel execution ------------------------------------
 
+empty_gene_analysis_result <- function(gene_name, error_message) {
+  data.frame(
+    gene_name                  = gene_name,
+    sigma_b_sq_stationary      = NA_real_,
+    sigma_eps_sq_stationary    = NA_real_,
+    range_stationary           = NA_real_,
+    prop_spatial_stationary    = NA_real_,
+    log_ml_stationary          = NA_real_,
+    sigma_b_sq_nonstationary   = NA_real_,
+    sigma_eps_sq_nonstationary = NA_real_,
+    range_nonstationary        = NA_real_,
+    prop_spatial_nonstationary = NA_real_,
+    log_ml_nonstationary       = NA_real_,
+    theta1_ns                  = NA_real_,
+    theta2_ns                  = NA_real_,
+    theta3_ns                  = NA_real_,
+    theta4_ns                  = NA_real_,
+    log_ml_nonspatial          = NA_real_,
+    sigma_eps_sq_nonspatial    = NA_real_,
+    mu_nonspatial              = NA_real_,
+    log_bayes_factor           = NA_real_,
+    bayes_factor               = NA_real_,
+    bf_interpretation          = NA_character_,
+    error_message              = as.character(error_message),
+    stringsAsFactors           = FALSE
+  )
+}
+
 analyze_gene_safe <- function(gene_idx, counts_mat, coords, gene_names,
+                               gene_ids       = NULL,
                                normalize      = TRUE,
                                detrend        = TRUE,
                                detrend_method = "polynomial",
                                mesh           = NULL) {
   gene_name <- gene_names[gene_idx]
-  tryCatch({
+  gene_id <- if (is.null(gene_ids)) as.character(gene_idx) else gene_ids[gene_idx]
+
+  result <- tryCatch({
     expr <- log1p(counts_mat[gene_idx, ])
     analyze_gene_nonstationarity(
       coords         = coords,
@@ -298,27 +396,333 @@ analyze_gene_safe <- function(gene_idx, counts_mat, coords, gene_names,
       detrend_method = detrend_method,
       mesh           = mesh,
       verbose        = FALSE
-    )
+    ) |>
+      validate_gene_analysis_payload()
   }, error = function(e) {
-    data.frame(
-      gene_name                  = gene_name,
-      sigma_b_sq_stationary      = NA_real_,
-      sigma_eps_sq_stationary    = NA_real_,
-      range_stationary           = NA_real_,
-      prop_spatial_stationary    = NA_real_,
-      log_ml_stationary          = NA_real_,
-      sigma_b_sq_nonstationary   = NA_real_,
-      sigma_eps_sq_nonstationary = NA_real_,
-      range_nonstationary        = NA_real_,
-      prop_spatial_nonstationary = NA_real_,
-      log_ml_nonstationary       = NA_real_,
-      log_bayes_factor           = NA_real_,
-      bayes_factor               = NA_real_,
-      bf_interpretation          = NA_character_,
-      error_message              = e$message,
-      stringsAsFactors           = FALSE
-    )
+    empty_gene_analysis_result(gene_name, conditionMessage(e))
   })
+
+  data.frame(
+    gene_index = as.integer(gene_idx),
+    gene_id    = as.character(gene_id),
+    result,
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+}
+
+# --- Result integrity and atomic persistence ---------------------------------
+
+analysis_schema_version <- 3L
+analysis_implementation_files <- c("analysis_functions.R", "run_analysis.R")
+
+analysis_result_numeric_columns <- c(
+  "sigma_b_sq_stationary", "sigma_eps_sq_stationary", "range_stationary",
+  "prop_spatial_stationary", "log_ml_stationary",
+  "sigma_b_sq_nonstationary", "sigma_eps_sq_nonstationary",
+  "range_nonstationary", "prop_spatial_nonstationary",
+  "log_ml_nonstationary", "theta1_ns", "theta2_ns", "theta3_ns",
+  "theta4_ns", "log_ml_nonspatial", "sigma_eps_sq_nonspatial",
+  "mu_nonspatial", "log_bayes_factor", "bayes_factor"
+)
+
+analysis_result_required_columns <- c(
+  "gene_index", "gene_id", "gene_name",
+  analysis_result_numeric_columns,
+  "bf_interpretation", "error_message"
+)
+
+fingerprint_analysis_implementation <- function(script_dir) {
+  paths <- file.path(script_dir, analysis_implementation_files)
+  missing <- paths[!file.exists(paths)]
+  if (length(missing) > 0L) {
+    stop(
+      "Cannot fingerprint missing analysis files: ",
+      paste(missing, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  hashes <- unname(as.character(tools::md5sum(paths)))
+  if (anyNA(hashes) || any(!grepl("^[0-9a-fA-F]{32}$", hashes))) {
+    stop("Could not fingerprint the analysis implementation", call. = FALSE)
+  }
+  stats::setNames(hashes, analysis_implementation_files)
+}
+
+analysis_implementation_matches <- function(observed, expected) {
+  is.character(observed) &&
+    identical(names(observed), names(expected)) &&
+    identical(tolower(unname(observed)), tolower(unname(expected)))
+}
+
+validate_gene_analysis_payload <- function(result) {
+  required <- setdiff(
+    analysis_result_required_columns,
+    c("gene_index", "gene_id", "error_message")
+  )
+  if (!is.data.frame(result) || nrow(result) != 1L) {
+    stop("model fit did not return exactly one result row", call. = FALSE)
+  }
+
+  missing <- setdiff(required, names(result))
+  if (length(missing) > 0L) {
+    stop(
+      "model fit omitted outputs: ", paste(missing, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  non_numeric <- analysis_result_numeric_columns[
+    !vapply(result[analysis_result_numeric_columns], is.numeric, logical(1))
+  ]
+  if (length(non_numeric) > 0L) {
+    stop(
+      "model fit returned non-numeric outputs: ",
+      paste(non_numeric, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  finite_columns <- setdiff(analysis_result_numeric_columns, "bayes_factor")
+  nonfinite <- finite_columns[!vapply(
+    result[finite_columns],
+    function(x) length(x) == 1L && is.finite(x),
+    logical(1)
+  )]
+  if (length(nonfinite) > 0L) {
+    stop(
+      "model fit returned non-finite outputs: ",
+      paste(nonfinite, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (is.na(result$bayes_factor) || result$bayes_factor < 0) {
+    stop("model fit returned an invalid bayes_factor", call. = FALSE)
+  }
+  if (!is.character(result$gene_name) || is.na(result$gene_name) ||
+      !nzchar(result$gene_name)) {
+    stop("model fit returned an invalid gene_name", call. = FALSE)
+  }
+  if (!is.character(result$bf_interpretation) ||
+      is.na(result$bf_interpretation) ||
+      !nzchar(result$bf_interpretation)) {
+    stop("model fit returned an invalid bf_interpretation", call. = FALSE)
+  }
+
+  expected_log_bf <- result$log_ml_nonstationary - result$log_ml_stationary
+  if (abs(result$log_bayes_factor - expected_log_bf) >
+      1e-8 * (1 + abs(expected_log_bf))) {
+    stop(
+      "model fit returned an inconsistent log_bayes_factor",
+      call. = FALSE
+    )
+  }
+  if (result$prop_spatial_stationary < 0 ||
+      result$prop_spatial_stationary > 1 ||
+      result$prop_spatial_nonstationary < 0 ||
+      result$prop_spatial_nonstationary > 1) {
+    stop("model fit returned a spatial proportion outside [0, 1]", call. = FALSE)
+  }
+
+  result
+}
+
+validate_gene_results <- function(results, expected_gene_indices,
+                                  expected_gene_ids = NULL) {
+  problems <- character()
+
+  if (!is.data.frame(results)) {
+    return(list(valid = FALSE, message = "result object is not a data.frame"))
+  }
+
+  missing_columns <- setdiff(analysis_result_required_columns, names(results))
+  if (length(missing_columns) > 0L) {
+    problems <- c(
+      problems,
+      paste0("missing required columns: ", paste(missing_columns, collapse = ", "))
+    )
+  }
+
+  numeric_columns <- intersect(analysis_result_numeric_columns, names(results))
+  non_numeric_columns <- numeric_columns[
+    !vapply(results[numeric_columns], is.numeric, logical(1))
+  ]
+  if (length(non_numeric_columns) > 0L) {
+    problems <- c(
+      problems,
+      paste0(
+        "model columns are not numeric: ",
+        paste(non_numeric_columns, collapse = ", ")
+      )
+    )
+  }
+
+  character_columns <- intersect(
+    c("gene_id", "gene_name", "bf_interpretation", "error_message"),
+    names(results)
+  )
+  non_character_columns <- character_columns[
+    !vapply(results[character_columns], is.character, logical(1))
+  ]
+  if (length(non_character_columns) > 0L) {
+    problems <- c(
+      problems,
+      paste0(
+        "identifier/status columns are not character: ",
+        paste(non_character_columns, collapse = ", ")
+      )
+    )
+  }
+
+  expected_gene_indices <- as.integer(expected_gene_indices)
+  if (nrow(results) != length(expected_gene_indices)) {
+    problems <- c(
+      problems,
+      sprintf(
+        "row count is %d but %d scheduled genes were expected",
+        nrow(results), length(expected_gene_indices)
+      )
+    )
+  }
+
+  if ("gene_index" %in% names(results)) {
+    observed_indices <- as.integer(results$gene_index)
+    if (anyNA(observed_indices)) {
+      problems <- c(problems, "gene_index contains missing values")
+    }
+    if (anyDuplicated(observed_indices)) {
+      problems <- c(problems, "gene_index contains duplicates")
+    }
+    if (!identical(observed_indices, expected_gene_indices)) {
+      problems <- c(problems, "gene_index does not exactly match the scheduled order")
+    }
+  }
+
+  if (!is.null(expected_gene_ids) && "gene_id" %in% names(results)) {
+    if (!identical(as.character(results$gene_id), as.character(expected_gene_ids))) {
+      problems <- c(problems, "gene_id does not exactly match the filtered dataset")
+    }
+  }
+
+  for (field in intersect(c("gene_id", "gene_name"), names(results))) {
+    values <- as.character(results[[field]])
+    if (anyNA(values) || any(!nzchar(values))) {
+      problems <- c(problems, paste0(field, " contains missing or empty values"))
+    }
+  }
+
+  if (length(missing_columns) == 0L && length(non_numeric_columns) == 0L) {
+    failed_fit <- is.na(results$log_bayes_factor)
+    has_error <- !is.na(results$error_message) & nzchar(results$error_message)
+    if (any(failed_fit & !has_error)) {
+      problems <- c(problems, "failed fits are missing an error_message")
+    }
+    if (any(!failed_fit & has_error)) {
+      problems <- c(problems, "successful fits contain an error_message")
+    }
+
+    successful_fit <- !failed_fit
+    finite_success_columns <- setdiff(
+      analysis_result_numeric_columns,
+      "bayes_factor"
+    )
+    success_values <- as.matrix(results[successful_fit, finite_success_columns, drop = FALSE])
+    if (length(success_values) > 0L && any(!is.finite(success_values))) {
+      problems <- c(problems, "successful fits contain non-finite model outputs")
+    }
+    if (any(
+      successful_fit &
+        (is.na(results$bayes_factor) | results$bayes_factor < 0)
+    )) {
+      problems <- c(problems, "successful fits contain an invalid bayes_factor")
+    }
+    if (any(
+      successful_fit &
+        (is.na(results$bf_interpretation) | !nzchar(results$bf_interpretation))
+    )) {
+      problems <- c(problems, "successful fits are missing bf_interpretation")
+    }
+
+    failed_values <- as.matrix(results[failed_fit, analysis_result_numeric_columns, drop = FALSE])
+    if (length(failed_values) > 0L && any(!is.na(failed_values))) {
+      problems <- c(problems, "failed fits contain partial numeric model outputs")
+    }
+    if (any(failed_fit & !is.na(results$bf_interpretation))) {
+      problems <- c(problems, "failed fits contain bf_interpretation")
+    }
+
+    expected_log_bf <- results$log_ml_nonstationary - results$log_ml_stationary
+    inconsistent_log_bf <- successful_fit & (
+      abs(results$log_bayes_factor - expected_log_bf) >
+        1e-8 * (1 + abs(expected_log_bf))
+    )
+    if (any(inconsistent_log_bf)) {
+      problems <- c(
+        problems,
+        "log_bayes_factor is inconsistent with the two spatial marginal likelihoods"
+      )
+    }
+
+    if (any(
+      successful_fit &
+        (results$prop_spatial_stationary < 0 |
+           results$prop_spatial_stationary > 1 |
+           results$prop_spatial_nonstationary < 0 |
+           results$prop_spatial_nonstationary > 1)
+    )) {
+      problems <- c(problems, "successful fits contain spatial proportions outside [0, 1]")
+    }
+  }
+
+  list(
+    valid   = length(problems) == 0L,
+    message = if (length(problems) == 0L) "complete" else paste(unique(problems), collapse = "; ")
+  )
+}
+
+assert_complete_gene_results <- function(results, expected_gene_indices,
+                                         expected_gene_ids = NULL) {
+  check <- validate_gene_results(results, expected_gene_indices, expected_gene_ids)
+  if (!check$valid) {
+    stop("Incomplete gene results: ", check$message, call. = FALSE)
+  }
+  invisible(results)
+}
+
+save_rds_atomic <- function(object, path) {
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  tmp_path <- tempfile(
+    pattern = paste0(".", basename(path), "."),
+    tmpdir  = dirname(path),
+    fileext = ".tmp"
+  )
+  on.exit(if (file.exists(tmp_path)) unlink(tmp_path), add = TRUE)
+
+  saveRDS(object, tmp_path)
+  if (!file.rename(tmp_path, path)) {
+    stop("Could not atomically replace result file: ", path, call. = FALSE)
+  }
+
+  invisible(path)
+}
+
+write_csv_atomic <- function(object, path, row.names = FALSE) {
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  tmp_path <- tempfile(
+    pattern = paste0(".", basename(path), "."),
+    tmpdir  = dirname(path),
+    fileext = ".tmp"
+  )
+  on.exit(if (file.exists(tmp_path)) unlink(tmp_path), add = TRUE)
+
+  write.csv(object, tmp_path, row.names = row.names)
+  if (!file.rename(tmp_path, path)) {
+    stop("Could not atomically replace CSV file: ", path, call. = FALSE)
+  }
+
+  invisible(path)
 }
 
 cat("Analysis functions loaded.\n")

@@ -1,180 +1,141 @@
-# HPC Scripts for Spatial Nonstationarity Analysis
+# HPC workflow for the spatial nonstationarity analysis
 
-This directory contains scripts for running the spatial nonstationarity analysis on an HPC cluster using SLURM.
-
-## Overview
-
-The analysis:
-1. Downloads all SpatialExperiment datasets from ExperimentHub
-2. For each dataset, analyzes all genes (or top N expressed genes)
-3. Fits stationary and nonstationary Matérn models using INLA
-4. Calculates Bayes factors comparing the models
-5. Saves results for downstream analysis
+These scripts run one SLURM array task per study dataset, retain an explicit
+row for every attempted gene, and combine results only after every dataset job
+has completed successfully.
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `download_datasets.R` | Downloads SpatialExperiment datasets from ExperimentHub |
-| `analysis_functions.R` | Helper functions for the nonstationarity analysis |
-| `run_analysis.R` | Main analysis script with doParallel support |
-| `submit_download.sbatch` | SBATCH script to submit the download job |
-| `submit_analysis.sbatch` | SBATCH script to submit the analysis job |
+| File | Purpose |
+|---|---|
+| `analysis_datasets.txt` | Stable array order for the 12 study datasets |
+| `download_datasets.R` | Download SpatialExperiment resources from ExperimentHub |
+| `analysis_functions.R` | INLA model fitting, safe per-gene rows, and integrity helpers |
+| `run_analysis.R` | Analyze one array-selected dataset or all datasets sequentially |
+| `combine_results.R` | Validate and combine completed per-dataset outputs |
+| `submit_download.sbatch` | Download job |
+| `submit_analysis.sbatch` | 12-task analysis array |
+| `submit_combine.sbatch` | Post-array validation/combine job |
+| `preflight_check.sh` | Modules, packages, files, syntax, and array-map checks |
+| `test_result_handling.R` | Lightweight regression test for failed-gene handling |
 
-## Prerequisites
+## Failure and completeness semantics
 
-### R Packages
-```r
-install.packages(c("doParallel", "foreach", "dplyr"))
+An expected gene-level INLA failure, including Newton-Raphson
+non-convergence, produces one row with model statistics set to `NA` and the
+diagnostic in `error_message`. Later genes continue to run.
 
-# Bioconductor packages
-BiocManager::install(c("SpatialExperiment", "ExperimentHub", "SummarizedExperiment"))
+Before a per-dataset file is saved, the script requires:
 
-# INLA (from INLA repository)
-install.packages("INLA", 
-                 repos = c(getOption("repos"), 
-                          INLA = "https://inla.r-inla-download.org/R/testing"), 
-                 type = "binary")
-```
+- exactly one row per scheduled filtered gene;
+- ordered, unique `gene_index` values;
+- matching Ensembl `gene_id` values; and
+- the required result/error columns.
 
-## Usage
+An unexpected worker error or a completeness mismatch stops the R process and
+returns a nonzero SLURM status. Results are written through a temporary file,
+so an old result is replaced only after the complete new object has serialized.
+Legacy or partial result files are not silently skipped; reusable outputs must
+carry the current schema-v3 completion metadata plus fingerprints of the source
+dataset and the exact analysis implementation.
 
-### Step 1: Download Datasets
+Array tasks write only `Dataset_results.rds`. They do not write the shared
+`all_results_combined.*` files, which avoids cross-task overwrite races.
 
-First, download all SpatialExperiment datasets:
+## Cluster usage
+
+Create the log directory before calling `sbatch`; Slurm opens its output files
+before the submitted script begins.
 
 ```bash
-# Interactive
-Rscript hpc/download_datasets.R data/spatial_datasets
+mkdir -p logs
+bash hpc/preflight_check.sh
+```
 
-# Or submit to SLURM
+Download datasets if needed:
+
+```bash
 sbatch hpc/submit_download.sbatch
 ```
 
-### Step 2: Run Analysis
-
-After datasets are downloaded:
+Submit the full analysis and a dependent combine job:
 
 ```bash
-# Interactive (for testing)
-Rscript hpc/run_analysis.R data/spatial_datasets results 8 100
-
-# Submit to SLURM
-sbatch hpc/submit_analysis.sbatch
+analysis_job=$(sbatch --parsable hpc/submit_analysis.sbatch)
+sbatch --dependency="afterok:${analysis_job}" hpc/submit_combine.sbatch
 ```
 
-### Command Line Arguments
+The full array order is version-controlled in `analysis_datasets.txt`; adding
+or removing files from the data directory does not shift task indices.
+Each selected SpatialExperiment is analyzed with every spot supplied by its
+Bioconductor resource; the workflow does not apply an additional `in_tissue`
+filter. Consequently, `Visium_mouseCoronal` retains all 4,992 supplied spots.
+`MouseBrainCoronal`, a separate tissue-only representation of the same section,
+is excluded so that this biological sample is counted once.
 
-**download_datasets.R:**
-```
-Rscript download_datasets.R [output_dir]
+### Repair the three retained historically truncated datasets
 
-  output_dir : Directory to save datasets (default: data/spatial_datasets)
-```
+The affected datasets now have stable indices:
 
-**run_analysis.R:**
-```
-Rscript run_analysis.R [data_dir] [output_dir] [n_cores] [genes_per_dataset]
+| Index | Dataset | Historical rows saved | Expected filtered genes |
+|---:|---|---:|---:|
+| 3 | HumanGlioblastoma | 13,368 | 17,963 |
+| 5 | HumanLymphNode | 4,406 | 18,295 |
+| 8 | MouseBrainSagittalAnterior | 1,880 | 16,431 |
 
-  data_dir          : Directory with .rds SpatialExperiment files
-  output_dir        : Directory for results
-  n_cores           : Number of parallel cores (default: all available)
-  genes_per_dataset : "all" or a number like "1000" for top N genes
-```
-
-## SBATCH Configuration
-
-Edit the SBATCH scripts to match your HPC environment:
+Rerun those tasks with:
 
 ```bash
-#SBATCH --time=48:00:00        # Wall clock time
-#SBATCH --cpus-per-task=32     # Number of cores
-#SBATCH --mem=128G             # Memory
-#SBATCH --partition=standard   # Your partition name
-#SBATCH --mail-user=you@email  # Your email
+mkdir -p logs
+sbatch --array=3,5,8 --export=ALL,OVERWRITE=1 hpc/submit_analysis.sbatch
 ```
 
-Also uncomment/modify the module loading section:
-```bash
-# module load R/4.4.0
-# source activate your_conda_env
+The other nine retained old files were not truncated in the historical logs, but they
+predate the strict `gene_index`/`gene_id` completion schema. Run the full array
+once before using `submit_combine.sbatch` to produce a wholly validated combined
+file.
+
+## Direct usage
+
+```text
+Rscript hpc/run_analysis.R [data_dir] [output_dir] [n_cores]
+
+  data_dir   Directory containing the listed .rds datasets
+  output_dir Directory for result files
+  n_cores    Parallel workers (default: detected cores)
 ```
 
-## Output
+With no `SLURM_ARRAY_TASK_ID`, all datasets are processed sequentially and the
+validated per-dataset results are also combined. In array mode the task ID
+selects one entry from `analysis_datasets.txt`.
 
-Results are saved to the output directory:
+Set `OVERWRITE=1` to force a rerun. Without it, an existing output is reused
+only if it passes the strict completeness check against the filtered source
+dataset.
 
-```
-results/
-├── Dataset1_results.rds       # Per-dataset results
-├── Dataset2_results.rds
-├── ...
-├── all_results_combined.rds   # Combined results (R object)
-└── all_results_combined.csv   # Combined results (CSV)
-```
+## Output columns
 
-### Results Columns
+In addition to model estimates and Bayes factors, each per-gene row contains:
 
-| Column | Description |
-|--------|-------------|
-| `gene_name` | Gene symbol/name |
-| `sigma_b_sq_stationary` | Spatial variance (stationary model) |
-| `sigma_eps_sq_stationary` | Noise variance (stationary model) |
-| `range_stationary` | Spatial range (stationary model) |
-| `prop_spatial_stationary` | Proportion of spatial variance |
-| `log_ml_stationary` | Log marginal likelihood (stationary) |
-| `sigma_b_sq_nonstationary` | Spatial variance (nonstationary model) |
-| `sigma_eps_sq_nonstationary` | Noise variance (nonstationary model) |
-| `range_nonstationary` | Spatial range (nonstationary model) |
-| `prop_spatial_nonstationary` | Proportion of spatial variance |
-| `log_ml_nonstationary` | Log marginal likelihood (nonstationary) |
-| `log_bayes_factor` | log(BF_10) = log(p(Y|M1)/p(Y|M0)) |
-| `bayes_factor` | BF_10 on original scale |
-| `bf_interpretation` | Wagenmakers/Jeffreys interpretation |
-| `dataset_name` | Source dataset name |
+| Column | Meaning |
+|---|---|
+| `gene_index` | Unique position in the filtered dataset |
+| `gene_id` | Stable feature/Ensembl identifier |
+| `gene_name` | Display symbol; not assumed unique |
+| `theta1_ns`–`theta4_ns` | Nonstationary SPDE hyperparameters |
+| `error_message` | `NA` on success; diagnostic text on a failed fit |
+| `dataset_name` | Source dataset basename |
 
-### Bayes Factor Interpretation
+Positive `log_bayes_factor` favors the nonstationary model; negative values
+favor the stationary model.
 
-| log(BF) Range | Evidence |
-|---------------|----------|
-| 0 - 1.1 | Anecdotal |
-| 1.1 - 2.3 | Moderate |
-| 2.3 - 3.4 | Strong |
-| 3.4 - 4.6 | Very strong |
-| > 4.6 | Extreme |
-
-Positive log(BF) favors nonstationary; negative favors stationary.
-
-## Monitoring Jobs
+## Monitoring
 
 ```bash
-# Check job status
-squeue -u $USER
-
-# View output logs
-tail -f logs/spatran_ns_JOBID.out
-
-# Cancel a job
-scancel JOBID
+squeue -u "$USER"
+tail -f logs/spatran_ns_JOBID_TASKID.out
 ```
 
-## Troubleshooting
-
-### INLA not working
-Make sure INLA binary is available. On some systems you may need:
-```r
-install.packages("INLA", 
-                 repos = c(getOption("repos"), 
-                          INLA = "https://inla.r-inla-download.org/R/testing"), 
-                 type = "binary")
-```
-
-### Out of memory
-- Reduce `genes_per_dataset` 
-- Increase `--mem` in SBATCH
-- Process fewer datasets per job
-
-### Job timeout
-- Increase `--time` in SBATCH
-- Reduce `genes_per_dataset`
-- Split into multiple jobs
+If a task fails, its existing result file is left untouched. Fix the reported
+cause and resubmit that task index; do not treat a nonempty legacy `.rds` file
+as proof of completion.
