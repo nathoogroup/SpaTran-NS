@@ -1,38 +1,39 @@
 \begin{table}[htbp]
 \centering
-\caption{Analyzed datasets, Space Ranger versions, and proportion of genes favoring the nonstationary spatial model.}
+\caption{Analyzed datasets, Bioconductor repository resources, ExperimentHub accessions, Space Ranger versions, and proportion of genes favoring the nonstationary spatial model. EH9628 and EH9629 are the current replacements for the accessions used during analysis, EH9516 and EH9517, respectively.}
 \label{tab:dataset-summary}
-\begin{tabular}{lllrrlr}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lllllrrlr}
 \toprule
-Dataset & Species & Tissue & Spots & Genes & Space Ranger & \% NS
+Dataset & Repository & Accession & Species & Tissue & Spots & Genes & Space Ranger & \% NS
  \\
 \midrule
-HumanBreastCancerILC & Human & Breast cancer (ILC) & 4325 & 16570 & 1.2.0 & 50.0
+HumanBreastCancerILC & ExperimentHub (TENxVisiumData) & EH6696 & Human & Breast cancer (ILC) & 4325 & 16570 & 1.2.0 & 50.0
  \\
-HumanSpinalCord & Human & Spinal cord & 2812 & 16061 & 1.2.0 & 23.6
+HumanSpinalCord & ExperimentHub (TENxVisiumData) & EH6703 & Human & Spinal cord & 2812 & 16061 & 1.2.0 & 23.6
  \\
-MouseBrainCoronal & Murine & Brain (coronal I) & 2702 & 1535 & 1.1.0 & 20.3
+MouseBrainSagittalPosterior & ExperimentHub (TENxVisiumData) & EH6705 & Murine & Brain (posterior) & 6644 & 16143 & 1.1.0 & 18.9
  \\
-MouseBrainSagittalPosterior & Murine & Brain (posterior) & 6644 & 16143 & 1.1.0 & 18.9
+Visium\_humanDLPFC & ExperimentHub (STexampleData) & EH9628 & Human & DLPFC & 4992 & 14932 & 1.0.0 & 18.8
  \\
-Visium\_humanDLPFC & Human & DLPFC & 4992 & 14932 & 1.0.0 & 18.8
+Visium\_mouseCoronal & ExperimentHub (STexampleData) & EH9629 & Murine & Brain (coronal) & 4992 & 16208 & 1.0.0 & 16.9
  \\
-Visium\_mouseCoronal & Murine & Brain (coronal II) & 4992 & 16208 & 1.0.0 & 16.9
+MouseBrainSagittalAnterior & ExperimentHub (TENxVisiumData) & EH6706 & Murine & Brain (anterior) & 5520 & 1882 & 1.1.0 & 15.6
  \\
-MouseBrainSagittalAnterior & Murine & Brain (anterior) & 5520 & 1882 & 1.1.0 & 15.6
+HumanGlioblastoma & ExperimentHub (TENxVisiumData) & EH6699 & Human & Glioblastoma & 3468 & 13376 & 1.2.0 & 14.1
  \\
-HumanGlioblastoma & Human & Glioblastoma & 3468 & 13376 & 1.2.0 & 14.1
+HumanColorectalCancer & ExperimentHub (TENxVisiumData) & EH6698 & Human & Colorectal cancer & 3138 & 16240 & 1.2.0 & 13.7
  \\
-HumanColorectalCancer & Human & Colorectal cancer & 3138 & 16240 & 1.2.0 & 13.7
+HumanLymphNode & ExperimentHub (TENxVisiumData) & EH6701 & Human & Lymph node & 4035 & 4410 & 1.1.0 & 11.8
  \\
-HumanLymphNode & Human & Lymph node & 4035 & 4410 & 1.1.0 & 11.8
+HumanOvarianCancer & ExperimentHub (TENxVisiumData) & EH6702 & Human & Ovarian cancer & 3493 & 16690 & 1.2.0 & 5.3
  \\
-HumanOvarianCancer & Human & Ovarian cancer & 3493 & 16690 & 1.2.0 & 5.3
+MouseKidneyCoronal & ExperimentHub (TENxVisiumData) & EH6707 & Murine & Kidney & 1438 & 16347 & 1.1.0 & 5.0
  \\
-MouseKidneyCoronal & Murine & Kidney & 1438 & 16347 & 1.1.0 & 5.0
- \\
-HumanHeart & Human & Heart & 4247 & 13691 & 1.1.0 & 3.4
+HumanHeart & ExperimentHub (TENxVisiumData) & EH6700 & Human & Heart & 4247 & 13691 & 1.1.0 & 3.4
  \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

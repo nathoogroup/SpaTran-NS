@@ -1,0 +1,17 @@
+# Stable SLURM array order for the 12 datasets analyzed in the study.
+# One basename per line, without the .rds extension.
+HumanBreastCancerILC
+HumanColorectalCancer
+HumanGlioblastoma
+HumanHeart
+HumanLymphNode
+HumanOvarianCancer
+HumanSpinalCord
+MouseBrainSagittalAnterior
+MouseBrainSagittalPosterior
+MouseKidneyCoronal
+Visium_humanDLPFC
+# Analyze each Bioconductor object as supplied, without extra spot filtering.
+# Keep Visium_mouseCoronal and exclude the separate tissue-only
+# MouseBrainCoronal representation of the same section.
+Visium_mouseCoronal

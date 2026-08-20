@@ -1,4 +1,6 @@
 #!/bin/bash
+set -uo pipefail
+
 # =============================================================================
 # Preflight Check Script for SpaTran-NS Cluster Analysis
 # =============================================================================
@@ -29,7 +31,7 @@ echo ""
 # ---- 1. Core module environment ---------------------------------------------
 echo "--- 1. Module environment ---"
 
-if module load StdEnv/2023 gcc/12.3 r/4.4.0 \
+if module load StdEnv/2023 gcc/12.3 boost/1.85.0 r/4.4.0 \
               geos/3.12.0 gdal/3.9.1 udunits/2.2.28 \
               gsl/2.7 jags/4.3.2 \
               r-bundle-bioconductor/3.20 2>/dev/null; then
@@ -65,15 +67,21 @@ done
 echo ""
 echo "--- 3. User R library (INLA from install_inla.sh) ---"
 
-R_LIBS_USER="$HOME/R/x86_64-pc-linux-gnu-library/${EBVERSIONR:0:3}"
-
-if [[ -d "$R_LIBS_USER" ]]; then
-  ok "User R_LIBS exists: $R_LIBS_USER"
-else
-  fail "User R_LIBS missing: $R_LIBS_USER  →  run: bash hpc/install_inla.sh"
+R_VERSION_SHORT="${EBVERSIONR:-}"
+R_LIBS_USER=""
+if [[ -n "$R_VERSION_SHORT" ]]; then
+  R_LIBS_USER="$HOME/R/x86_64-pc-linux-gnu-library/${R_VERSION_SHORT:0:3}"
 fi
 
-export R_LIBS="$R_LIBS_USER"
+if [[ -n "$R_LIBS_USER" && -d "$R_LIBS_USER" ]]; then
+  ok "User R_LIBS exists: $R_LIBS_USER"
+else
+  fail "User R_LIBS missing or R version unavailable  →  run: bash hpc/install_inla.sh"
+fi
+
+if [[ -n "$R_LIBS_USER" ]]; then
+  export R_LIBS="$R_LIBS_USER"
+fi
 
 R --quiet --no-save -e "stopifnot(requireNamespace('INLA', quietly=TRUE))" \
   >/dev/null 2>&1 \
@@ -99,11 +107,15 @@ check_file() { [[ -f "$1" ]] && ok "File: $1" || fail "MISSING file: $1"; }
 check_dir()  { [[ -d "$1" ]] && ok "Dir:  $1" || fail "MISSING dir:  $1 (created at runtime)"; }
 
 check_file "$PROJECT_DIR/hpc/analysis_functions.R"
+check_file "$PROJECT_DIR/hpc/analysis_datasets.txt"
+check_file "$PROJECT_DIR/hpc/combine_results.R"
 check_file "$PROJECT_DIR/hpc/download_datasets.R"
 check_file "$PROJECT_DIR/hpc/run_analysis.R"
 check_file "$PROJECT_DIR/hpc/install_inla.sh"
 check_file "$PROJECT_DIR/hpc/submit_download.sbatch"
 check_file "$PROJECT_DIR/hpc/submit_analysis.sbatch"
+check_file "$PROJECT_DIR/hpc/submit_combine.sbatch"
+check_file "$PROJECT_DIR/hpc/test_result_handling.R"
 check_file "$PROJECT_DIR/SpaTran-NS.Rmd"
 
 check_dir  "$PROJECT_DIR/data/spatial_datasets"
@@ -115,7 +127,8 @@ echo ""
 echo "--- 6. SBATCH script content ---"
 
 for sbatch in "$PROJECT_DIR/hpc/submit_download.sbatch" \
-              "$PROJECT_DIR/hpc/submit_analysis.sbatch"; do
+              "$PROJECT_DIR/hpc/submit_analysis.sbatch" \
+              "$PROJECT_DIR/hpc/submit_combine.sbatch"; do
   bname=$(basename "$sbatch")
   errs=0
 
@@ -126,27 +139,80 @@ for sbatch in "$PROJECT_DIR/hpc/submit_download.sbatch" \
   [[ $errs -eq 0 ]] && ok "SBATCH ok: $bname"
 done
 
-# ---- 7. Downloaded datasets -------------------------------------------------
+# ---- 7. Script syntax --------------------------------------------------------
 echo ""
-echo "--- 7. Downloaded Visium datasets ---"
+echo "--- 7. Script syntax ---"
+
+for shell_file in "$PROJECT_DIR/hpc/preflight_check.sh" \
+                  "$PROJECT_DIR/hpc/install_inla.sh" \
+                  "$PROJECT_DIR/hpc/submit_download.sbatch" \
+                  "$PROJECT_DIR/hpc/submit_analysis.sbatch" \
+                  "$PROJECT_DIR/hpc/submit_combine.sbatch"; do
+  if bash -n "$shell_file"; then
+    ok "Shell syntax: $(basename "$shell_file")"
+  else
+    fail "Shell syntax error: $(basename "$shell_file")"
+  fi
+done
+
+for r_file in "$PROJECT_DIR/hpc/analysis_functions.R" \
+              "$PROJECT_DIR/hpc/combine_results.R" \
+              "$PROJECT_DIR/hpc/download_datasets.R" \
+              "$PROJECT_DIR/hpc/run_analysis.R" \
+              "$PROJECT_DIR/hpc/test_result_handling.R"; do
+  if Rscript -e 'invisible(parse(file=commandArgs(TRUE)[1]))' "$r_file" \
+      >/dev/null 2>&1; then
+    ok "R syntax: $(basename "$r_file")"
+  else
+    fail "R syntax error: $(basename "$r_file")"
+  fi
+done
+
+if Rscript "$PROJECT_DIR/hpc/test_result_handling.R" >/dev/null 2>&1; then
+  ok "Per-gene failure/completeness regression test"
+else
+  fail "Per-gene failure/completeness regression test"
+fi
+
+# ---- 8. Downloaded datasets and array mapping -------------------------------
+echo ""
+echo "--- 8. Downloaded Visium datasets and array mapping ---"
 
 DATA_DIR="$PROJECT_DIR/data/spatial_datasets"
-if [[ -d "$DATA_DIR" ]]; then
-  N=$(find "$DATA_DIR" -maxdepth 1 -name "*.rds" \
-      ! -name "download_log*" ! -name "manifest*" 2>/dev/null | wc -l)
+DATASET_LIST="$PROJECT_DIR/hpc/analysis_datasets.txt"
+if [[ -d "$DATA_DIR" && -f "$DATASET_LIST" ]]; then
+  N=$(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$DATASET_LIST" | wc -l)
   if [[ $N -gt 0 ]]; then
-    ok "$N dataset .rds files found"
-    find "$DATA_DIR" -maxdepth 1 -name "*.rds" \
-         ! -name "download_log*" ! -name "manifest*" \
-      | sort | while read f; do
-          sz=$(du -h "$f" | cut -f1)
-          info "  $(basename $f)  ($sz)"
-        done
+    idx=0
+    missing=0
+    while IFS= read -r dataset_name; do
+      idx=$((idx+1))
+      dataset_file="$DATA_DIR/${dataset_name}.rds"
+      if [[ -f "$dataset_file" ]]; then
+        sz=$(du -h "$dataset_file" | cut -f1)
+        info "  [$idx] ${dataset_name}.rds  ($sz)"
+      else
+        fail "Missing listed dataset: $dataset_file"
+        missing=$((missing+1))
+      fi
+    done < <(sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$DATASET_LIST")
+
+    [[ $missing -eq 0 ]] && ok "All $N study datasets are present"
+
+    ARRAY_MAX=$(sed -n \
+      's/^#SBATCH --array=1-\([0-9][0-9]*\).*$/\1/p' \
+      "$PROJECT_DIR/hpc/submit_analysis.sbatch" | head -n 1)
+    if [[ -n "$ARRAY_MAX" && "$ARRAY_MAX" -eq "$N" ]]; then
+      ok "SBATCH array 1-$ARRAY_MAX matches analysis_datasets.txt"
+    else
+      fail "SBATCH array bound (${ARRAY_MAX:-not found}) does not match $N listed datasets"
+    fi
   else
-    fail "No dataset files yet  →  sbatch hpc/submit_download.sbatch"
+    fail "No datasets are listed in $DATASET_LIST"
   fi
 else
-  fail "Data directory missing  →  mkdir -p $DATA_DIR"
+  [[ -d "$DATA_DIR" ]] || fail "Data directory missing  →  mkdir -p $DATA_DIR"
+  [[ -f "$DATASET_LIST" ]] || fail "Dataset list missing: $DATASET_LIST"
 fi
 
 # ---- Summary ----------------------------------------------------------------

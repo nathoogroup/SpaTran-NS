@@ -12,19 +12,176 @@ tab_dir <- file.path(out_dir, "generated_tables")
 dir.create(add_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(tab_dir, recursive = TRUE, showWarnings = FALSE)
 
-read_rds_results <- function(results_dir) {
-  files <- list.files(results_dir, pattern = "_results[.]rds$", full.names = TRUE)
-  files <- files[!grepl("all_results_combined", files)]
-  if (!length(files)) stop("No *_results.rds files found in ", results_dir)
+analysis_implementation_files <- c("analysis_functions.R", "run_analysis.R")
+analysis_implementation_paths <- file.path(
+  root, "hpc", analysis_implementation_files
+)
+missing_implementation_files <- analysis_implementation_paths[
+  !file.exists(analysis_implementation_paths)
+]
+if (length(missing_implementation_files) > 0L) {
+  stop(
+    "Missing analysis implementation files: ",
+    paste(missing_implementation_files, collapse = ", ")
+  )
+}
+expected_analysis_implementation_md5 <- stats::setNames(
+  unname(as.character(tools::md5sum(analysis_implementation_paths))),
+  analysis_implementation_files
+)
 
-  rows <- lapply(files, function(f) {
+analysis_result_numeric_columns <- c(
+  "sigma_b_sq_stationary", "sigma_eps_sq_stationary", "range_stationary",
+  "prop_spatial_stationary", "log_ml_stationary",
+  "sigma_b_sq_nonstationary", "sigma_eps_sq_nonstationary",
+  "range_nonstationary", "prop_spatial_nonstationary",
+  "log_ml_nonstationary", "theta1_ns", "theta2_ns", "theta3_ns",
+  "theta4_ns", "log_ml_nonspatial", "sigma_eps_sq_nonspatial",
+  "mu_nonspatial", "log_bayes_factor", "bayes_factor"
+)
+analysis_result_required_columns <- c(
+  "gene_index", "gene_id", "gene_name",
+  analysis_result_numeric_columns,
+  "bf_interpretation", "error_message",
+  "dataset_name", "dataset_file", "n_spots", "n_genes_total"
+)
+
+read_rds_results <- function(results_dir, dataset_names) {
+  files <- file.path(results_dir, paste0(dataset_names, "_results.rds"))
+  missing_files <- files[!file.exists(files)]
+  if (length(missing_files)) {
+    stop("Missing study result files: ", paste(basename(missing_files), collapse = ", "))
+  }
+
+  rows <- Map(function(f, expected_dataset) {
     x <- readRDS(f)
-    if (!"dataset_name" %in% names(x)) {
-      x$dataset_name <- sub("_results[.]rds$", "", basename(f))
+    if (!is.data.frame(x)) {
+      stop(basename(f), " is not a data.frame")
+    }
+    metadata <- attr(x, "analysis_metadata")
+    missing_columns <- setdiff(analysis_result_required_columns, names(x))
+    schema_version <- if (is.list(metadata) && length(metadata$schema_version) == 1L) {
+      suppressWarnings(as.integer(metadata$schema_version))
+    } else {
+      NA_integer_
+    }
+    n_expected <- if (is.list(metadata) && length(metadata$n_genes_analyzed) == 1L) {
+      suppressWarnings(as.integer(metadata$n_genes_analyzed))
+    } else {
+      NA_integer_
+    }
+    n_spots_expected <- if (is.list(metadata) && length(metadata$n_spots) == 1L) {
+      suppressWarnings(as.integer(metadata$n_spots))
+    } else {
+      NA_integer_
+    }
+    n_genes_total_expected <- if (is.list(metadata) && length(metadata$n_genes_total) == 1L) {
+      suppressWarnings(as.integer(metadata$n_genes_total))
+    } else {
+      NA_integer_
+    }
+    gene_indices <- suppressWarnings(as.integer(x$gene_index))
+    failed_fit <- is.na(x$log_bayes_factor)
+    has_error <- !is.na(x$error_message) & nzchar(x$error_message)
+    dataset_files <- unique(as.character(x$dataset_file))
+    result_spot_counts <- unique(suppressWarnings(as.integer(x$n_spots)))
+    result_gene_counts <- unique(suppressWarnings(as.integer(x$n_genes_total)))
+    implementation_md5 <- if (is.list(metadata)) {
+      metadata$analysis_implementation_md5
+    } else {
+      NULL
+    }
+    implementation_matches <- is.character(implementation_md5) &&
+      identical(names(implementation_md5), names(expected_analysis_implementation_md5)) &&
+      identical(
+        tolower(unname(implementation_md5)),
+        tolower(unname(expected_analysis_implementation_md5))
+      )
+    numeric_columns_ok <- all(vapply(
+      x[intersect(analysis_result_numeric_columns, names(x))],
+      is.numeric,
+      logical(1)
+    ))
+    character_columns <- intersect(
+      c("gene_id", "gene_name", "bf_interpretation", "error_message"),
+      names(x)
+    )
+    character_columns_ok <- all(vapply(
+      x[character_columns],
+      is.character,
+      logical(1)
+    ))
+    successful_fit <- !failed_fit
+    finite_success_columns <- setdiff(
+      analysis_result_numeric_columns,
+      "bayes_factor"
+    )
+    successful_values <- if (!length(missing_columns) && numeric_columns_ok) {
+      as.matrix(x[successful_fit, finite_success_columns, drop = FALSE])
+    } else {
+      matrix(NA_real_, nrow = 1L)
+    }
+    failed_values <- if (!length(missing_columns) && numeric_columns_ok) {
+      as.matrix(x[failed_fit, analysis_result_numeric_columns, drop = FALSE])
+    } else {
+      matrix(0, nrow = 1L)
+    }
+    expected_log_bf <- if (!length(missing_columns) && numeric_columns_ok) {
+      x$log_ml_nonstationary - x$log_ml_stationary
+    } else {
+      rep(NA_real_, nrow(x))
+    }
+    log_bf_consistent <- !any(
+      successful_fit &
+        abs(x$log_bayes_factor - expected_log_bf) >
+          1e-8 * (1 + abs(expected_log_bf))
+    )
+
+    valid <- !length(missing_columns) &&
+      is.list(metadata) &&
+      isTRUE(metadata$complete) &&
+      identical(schema_version, 3L) &&
+      implementation_matches &&
+      identical(as.character(metadata$dataset_name), expected_dataset) &&
+      length(metadata$source_rds_md5) == 1L &&
+      grepl("^[0-9a-fA-F]{32}$", as.character(metadata$source_rds_md5)) &&
+      identical(
+        as.character(metadata$spot_selection),
+        "all_bioconductor_supplied_spots"
+      ) &&
+      !is.na(n_expected) &&
+      identical(nrow(x), n_expected) &&
+      identical(gene_indices, seq_len(n_expected)) &&
+      identical(unique(as.character(x$dataset_name)), expected_dataset) &&
+      length(dataset_files) == 1L &&
+      identical(dataset_files, as.character(metadata$dataset_file)) &&
+      !is.na(n_spots_expected) &&
+      identical(result_spot_counts, n_spots_expected) &&
+      !is.na(n_genes_total_expected) &&
+      identical(result_gene_counts, n_genes_total_expected) &&
+      numeric_columns_ok &&
+      character_columns_ok &&
+      (length(successful_values) == 0L || all(is.finite(successful_values))) &&
+      !any(successful_fit & (is.na(x$bayes_factor) | x$bayes_factor < 0)) &&
+      !any(successful_fit &
+        (is.na(x$bf_interpretation) | !nzchar(x$bf_interpretation))) &&
+      (length(failed_values) == 0L || all(is.na(failed_values))) &&
+      !any(failed_fit & !is.na(x$bf_interpretation)) &&
+      log_bf_consistent &&
+      !any(failed_fit & !has_error) &&
+      !any(!failed_fit & has_error)
+
+    if (!valid) {
+      details <- if (length(missing_columns)) {
+        paste0("missing columns: ", paste(missing_columns, collapse = ", "))
+      } else {
+        "schema-v3 completeness or dataset metadata mismatch"
+      }
+      stop(basename(f), " is not a complete validated result (", details, ")")
     }
     x$source_result_file <- basename(f)
     x
-  })
+  }, files, dataset_names)
 
   all_names <- unique(unlist(lapply(rows, names), use.names = FALSE))
   rows <- lapply(rows, function(x) {
@@ -61,7 +218,8 @@ latex_escape <- function(x) {
   x
 }
 
-write_simple_table <- function(df, path, caption = NULL, label = NULL, digits = 3) {
+write_simple_table <- function(df, path, caption = NULL, label = NULL, digits = 3,
+                               font_size = NULL, resize = FALSE) {
   con <- file(path, open = "wt")
   on.exit(close(con), add = TRUE)
   if (!is.null(caption)) {
@@ -70,6 +228,8 @@ write_simple_table <- function(df, path, caption = NULL, label = NULL, digits = 
     writeLines("\\begin{table}[htbp]\n\\centering", con)
   }
   if (!is.null(label)) writeLines(sprintf("\\label{%s}", label), con)
+  if (!is.null(font_size)) writeLines(sprintf("\\%s", font_size), con)
+  if (resize) writeLines("\\resizebox{\\linewidth}{!}{%", con)
   align <- paste(vapply(df, function(col) if (is.numeric(col)) "r" else "l", character(1)), collapse = "")
   writeLines(sprintf("\\begin{tabular}{%s}\n\\toprule", align), con)
   writeLines(paste(latex_escape(names(df)), collapse = " & "), con)
@@ -97,24 +257,26 @@ write_simple_table <- function(df, path, caption = NULL, label = NULL, digits = 
     writeLines(paste(vals, collapse = " & "), con)
     writeLines(" \\\\", con)
   }
-  writeLines("\\bottomrule\n\\end{tabular}\n\\end{table}", con)
+  writeLines("\\bottomrule\n\\end{tabular}%", con)
+  if (resize) writeLines("}", con)
+  writeLines("\\end{table}", con)
 }
 
 sample_type_map <- data.frame(
   dataset_name = c(
-    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainCoronal",
-    "MouseBrainSagittalPosterior", "Visium_humanDLPFC", "Visium_mouseCoronal",
+    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainSagittalPosterior",
+    "Visium_humanDLPFC", "Visium_mouseCoronal",
     "MouseBrainSagittalAnterior", "HumanGlioblastoma", "HumanColorectalCancer",
     "HumanLymphNode", "HumanOvarianCancer", "MouseKidneyCoronal", "HumanHeart",
     "HumanBreastCancerIDC", "HumanCerebellum"
   ),
   species_group = c(
-    "Human", "Human", "Murine", "Murine", "Human", "Murine", "Murine",
+    "Human", "Human", "Murine", "Human", "Murine", "Murine",
     "Human", "Human", "Human", "Human", "Murine", "Human", "Human", "Human"
   ),
   tissue = c(
-    "Breast cancer (ILC)", "Spinal cord", "Brain (coronal I)", "Brain (posterior)",
-    "DLPFC", "Brain (coronal II)", "Brain (anterior)", "Glioblastoma",
+    "Breast cancer (ILC)", "Spinal cord", "Brain (posterior)",
+    "DLPFC", "Brain (coronal)", "Brain (anterior)", "Glioblastoma",
     "Colorectal cancer", "Lymph node", "Ovarian cancer", "Kidney", "Heart",
     "Breast cancer (IDC)", "Cerebellum"
   ),
@@ -123,17 +285,17 @@ sample_type_map <- data.frame(
 
 space_ranger_map <- data.frame(
   dataset_name = c(
-    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainCoronal",
-    "MouseBrainSagittalPosterior", "Visium_humanDLPFC", "Visium_mouseCoronal",
+    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainSagittalPosterior",
+    "Visium_humanDLPFC", "Visium_mouseCoronal",
     "MouseBrainSagittalAnterior", "HumanGlioblastoma", "HumanColorectalCancer",
     "HumanLymphNode", "HumanOvarianCancer", "MouseKidneyCoronal", "HumanHeart"
   ),
   space_ranger_version = c(
-    "1.2.0", "1.2.0", "1.1.0", "1.1.0", "1.0.0", "1.0.0", "1.1.0",
+    "1.2.0", "1.2.0", "1.1.0", "1.0.0", "1.0.0", "1.1.0",
     "1.2.0", "1.2.0", "1.1.0", "1.2.0", "1.1.0", "1.1.0"
   ),
   space_ranger_version_source = c(
-    rep("10x Genomics source dataset archived in ExperimentHub", 4),
+    rep("10x Genomics source dataset archived in ExperimentHub", 3),
     "spatialLIBD/Maynard et al. source documentation",
     "10x Genomics source dataset used by STexampleData",
     rep("10x Genomics source dataset archived in ExperimentHub", 7)
@@ -141,7 +303,6 @@ space_ranger_map <- data.frame(
   space_ranger_source_url = c(
     "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_BreastCancer",
     "https://cf.10xgenomics.com/samples/spatial-exp/1.2.0/Parent_Visium_Human_SpinalCord",
-    "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Adult_Mouse_Brain",
     "https://cf.10xgenomics.com/samples/spatial-exp/1.1.0/V1_Mouse_Brain_Sagittal_Posterior",
     "https://pmc.ncbi.nlm.nih.gov/articles/PMC8095368/",
     "https://www.10xgenomics.com/datasets/mouse-brain-section-coronal-1-standard-1-0-0",
@@ -156,7 +317,37 @@ space_ranger_map <- data.frame(
   stringsAsFactors = FALSE
 )
 
-results <- read_rds_results(file.path(root, "results"))
+dataset_provenance_map <- data.frame(
+  dataset_name = c(
+    "HumanBreastCancerILC", "HumanSpinalCord", "MouseBrainSagittalPosterior",
+    "Visium_humanDLPFC", "Visium_mouseCoronal",
+    "MouseBrainSagittalAnterior", "HumanGlioblastoma", "HumanColorectalCancer",
+    "HumanLymphNode", "HumanOvarianCancer", "MouseKidneyCoronal", "HumanHeart"
+  ),
+  repository = c(
+    rep("ExperimentHub (TENxVisiumData)", 3),
+    rep("ExperimentHub (STexampleData)", 2),
+    rep("ExperimentHub (TENxVisiumData)", 7)
+  ),
+  accession = c(
+    "EH6696", "EH6703", "EH6705", "EH9628", "EH9629", "EH6706",
+    "EH6699", "EH6698", "EH6701", "EH6702", "EH6707", "EH6700"
+  ),
+  stringsAsFactors = FALSE
+)
+
+analysis_dataset_file <- file.path(root, "hpc", "analysis_datasets.txt")
+if (!file.exists(analysis_dataset_file)) {
+  stop("Study dataset list not found: ", analysis_dataset_file)
+}
+analysis_datasets <- trimws(readLines(analysis_dataset_file, warn = FALSE))
+analysis_datasets <- analysis_datasets[
+  nzchar(analysis_datasets) & !startsWith(analysis_datasets, "#")
+]
+if (length(analysis_datasets) != 12L || anyDuplicated(analysis_datasets)) {
+  stop("Study dataset list must contain exactly 12 unique basenames")
+}
+results <- read_rds_results(file.path(root, "results"), analysis_datasets)
 results$log_bayes_factor <- as.numeric(results$log_bayes_factor)
 results$bayes_factor <- as.numeric(results$bayes_factor)
 results$log_bf_nonstationary_vs_stationary <- results$log_bayes_factor
@@ -187,12 +378,12 @@ if ("log_ml_nonspatial" %in% names(results)) {
 }
 
 per_gene_cols <- c(
-  "dataset_name", "gene_name", "log_bayes_factor",
+  "dataset_name", "gene_index", "gene_id", "gene_name", "log_bayes_factor",
   "bf_strength_nonstationary_vs_stationary",
   "model_favored_nonstationary_vs_stationary",
   "log_bf_stationary_vs_nonspatial",
   "bf_strength_stationary_vs_nonspatial",
-  "final_three_model_category"
+  "final_three_model_category", "error_message"
 )
 per_gene_cols <- intersect(per_gene_cols, names(results))
 per_gene_results <- results[, per_gene_cols, drop = FALSE]
@@ -203,15 +394,21 @@ unlink(file.path(add_dir, "Additional_file_3_full_gene_model_results.csv"))
 write.csv(per_gene_results, per_gene_path, row.names = FALSE)
 
 valid <- results[!is.na(results$log_bayes_factor), , drop = FALSE]
-split_valid <- split(valid, valid$dataset_name)
-dataset_summary <- do.call(rbind, lapply(split_valid, function(d) {
+split_results <- split(results, factor(results$dataset_name, levels = analysis_datasets))
+if (length(split_results) != length(analysis_datasets) || any(!lengths(split_results))) {
+  stop("Validated results do not contain all 12 study datasets")
+}
+dataset_summary <- do.call(rbind, lapply(split_results, function(d_all) {
+  d <- d_all[!is.na(d_all$log_bayes_factor), , drop = FALSE]
+  if (!nrow(d)) stop("A dataset has no successful gene fits")
   stationary_candidates <- d[d$log_bayes_factor < 0, , drop = FALSE]
   data.frame(
     dataset_name = d$dataset_name[1],
     dataset_file = if ("dataset_file" %in% names(d)) d$dataset_file[1] else NA,
     n_spots = suppressWarnings(as.integer(d$n_spots[1])),
     n_genes_total = suppressWarnings(as.integer(d$n_genes_total[1])),
-    n_genes_analyzed = nrow(d),
+    n_genes_analyzed = nrow(d_all),
+    n_gene_fits_failed = nrow(d_all) - nrow(d),
     n_nonstationary = sum(d$log_bayes_factor > 0, na.rm = TRUE),
     pct_nonstationary = 100 * mean(d$log_bayes_factor > 0, na.rm = TRUE),
     n_stationary_favored = sum(d$log_bayes_factor < 0, na.rm = TRUE),
@@ -243,6 +440,12 @@ if (file.exists(manifest_path)) {
   names(manifest)[names(manifest) == "title"] <- "dataset_name"
   dataset_summary <- merge(dataset_summary, manifest, by = "dataset_name", all.x = TRUE)
 }
+dataset_summary$repository <- dataset_provenance_map$repository[
+  match(dataset_summary$dataset_name, dataset_provenance_map$dataset_name)
+]
+dataset_summary$accession <- dataset_provenance_map$accession[
+  match(dataset_summary$dataset_name, dataset_provenance_map$dataset_name)
+]
 dataset_summary <- dataset_summary[order(-dataset_summary$pct_nonstationary), ]
 write.csv(dataset_summary, file.path(add_dir, "Additional_file_2_dataset_manifest_and_analysis_summary.csv"), row.names = FALSE)
 
@@ -345,31 +548,46 @@ if (nrow(stationary)) {
 }
 write.csv(stationary_summary, file.path(add_dir, "Additional_file_5_stationary_vs_nonspatial_summary.csv"), row.names = FALSE)
 
-copy_if_exists <- function(from, to) {
+copy_study_csv_if_exists <- function(from, to) {
   if (file.exists(from)) {
-    file.copy(from, to, overwrite = TRUE)
+    x <- read.csv(from, stringsAsFactors = FALSE)
+    dataset_column <- intersect(c("dataset_name", "dataset"), names(x))
+    if (length(dataset_column)) {
+      x <- x[x[[dataset_column[1]]] %in% analysis_datasets, , drop = FALSE]
+    }
+    write.csv(x, to, row.names = FALSE)
     TRUE
   } else {
     FALSE
   }
 }
-copy_if_exists(file.path(root, "results", "gsea_clusterprofiler.csv"),
+copy_study_csv_if_exists(file.path(root, "results", "gsea_clusterprofiler.csv"),
   file.path(add_dir, "Additional_file_6_clusterprofiler_gsea_results.csv"))
-copy_if_exists(file.path(root, "results", "gsea_stationarity_enrichment.csv"),
+copy_study_csv_if_exists(file.path(root, "results", "gsea_stationarity_enrichment.csv"),
   file.path(add_dir, "Additional_file_7_msigdb_fgsea_results.csv"))
 
 curve_files <- file.path(root, "simulation", "output",
   c("HumanBreastCancerILC_fdr_power_curves.csv", "HumanOvarianCancer_fdr_power_curves.csv"))
-curves <- do.call(rbind, lapply(curve_files[file.exists(curve_files)], read.csv, stringsAsFactors = FALSE))
+existing_curve_files <- curve_files[file.exists(curve_files)]
+curves <- if (length(existing_curve_files)) {
+  do.call(rbind, lapply(existing_curve_files, read.csv, stringsAsFactors = FALSE))
+} else {
+  data.frame()
+}
 write.csv(curves, file.path(add_dir, "Additional_file_8_simulation_fdr_power_curves.csv"), row.names = FALSE)
 
 rep_files <- file.path(root, "simulation", "output",
   c("HumanBreastCancerILC_replicate_summaries.csv", "HumanOvarianCancer_replicate_summaries.csv"))
-rep_summaries <- do.call(rbind, lapply(rep_files[file.exists(rep_files)], function(f) {
-  x <- read.csv(f, stringsAsFactors = FALSE)
-  x$dataset_name <- sub("_replicate_summaries[.]csv$", "", basename(f))
-  x
-}))
+existing_rep_files <- rep_files[file.exists(rep_files)]
+rep_summaries <- if (length(existing_rep_files)) {
+  do.call(rbind, lapply(existing_rep_files, function(f) {
+    x <- read.csv(f, stringsAsFactors = FALSE)
+    x$dataset_name <- sub("_replicate_summaries[.]csv$", "", basename(f))
+    x
+  }))
+} else {
+  data.frame()
+}
 write.csv(rep_summaries, file.path(add_dir, "Additional_file_9_simulation_replicate_summaries.csv"), row.names = FALSE)
 
 script_manifest <- data.frame(
@@ -377,6 +595,15 @@ script_manifest <- data.frame(
     "hpc/download_datasets.R",
     "hpc/run_analysis.R",
     "hpc/analysis_functions.R",
+    "hpc/analysis_datasets.txt",
+    "hpc/combine_results.R",
+    "hpc/install_inla.sh",
+    "hpc/preflight_check.sh",
+    "hpc/submit_download.sbatch",
+    "hpc/submit_analysis.sbatch",
+    "hpc/submit_combine.sbatch",
+    "hpc/test_result_handling.R",
+    "supplementary/scripts/create_supplementary_materials.R",
     "results/plot_diverging_stacked_bar.R",
     "results/plot_nonstationarity_by_sample_type.R",
     "results/plot_stationary_vs_nonspatial.R",
@@ -393,6 +620,15 @@ script_manifest <- data.frame(
     "Download SpatialExperiment datasets from ExperimentHub.",
     "Run per-gene stationary and nonstationary INLA model fits.",
     "Model-fitting, preprocessing, mesh, Bayes factor, and helper functions.",
+    "Define the stable set and SLURM order of study datasets.",
+    "Validate and combine completed per-dataset results.",
+    "Install INLA and its cluster dependencies.",
+    "Check cluster dependencies, syntax, datasets, and array mapping.",
+    "Submit the ExperimentHub download job.",
+    "Submit the per-dataset analysis array.",
+    "Submit validated post-array result combination.",
+    "Test failed-fit retention and result completeness checks.",
+    "Generate supplementary tables and machine-readable files.",
     "Plot evidence strength for stationary versus nonstationary spatial covariance.",
     "Plot dataset-level proportion of nonstationary genes by sample type.",
     "Plot stationary spatial versus stationary non-spatial model evidence.",
@@ -456,12 +692,25 @@ additional_files <- data.frame(
 )
 write.csv(additional_files, file.path(out_dir, "additional_file_metadata.csv"), row.names = FALSE)
 
-ds_tex <- dataset_summary[, c("dataset_name", "species_group", "tissue", "n_spots",
-  "n_genes_analyzed", "space_ranger_version", "pct_nonstationary")]
-names(ds_tex) <- c("Dataset", "Species", "Tissue", "Spots", "Genes", "Space Ranger", "% NS")
-write_simple_table(head(ds_tex, 13), file.path(tab_dir, "dataset_summary_table.tex"),
-  "Analyzed datasets, Space Ranger versions, and proportion of genes favoring the nonstationary spatial model.",
-  "tab:dataset-summary", digits = 1)
+ds_tex <- dataset_summary
+ds_tex$repository <- dataset_provenance_map$repository[
+  match(ds_tex$dataset_name, dataset_provenance_map$dataset_name)
+]
+ds_tex$accession <- dataset_provenance_map$accession[
+  match(ds_tex$dataset_name, dataset_provenance_map$dataset_name)
+]
+ds_tex <- ds_tex[, c("dataset_name", "repository", "accession", "species_group", "tissue",
+  "n_spots", "n_genes_analyzed", "space_ranger_version", "pct_nonstationary")]
+names(ds_tex) <- c("Dataset", "Repository", "Accession", "Species", "Tissue", "Spots",
+  "Genes", "Space Ranger", "% NS")
+write_simple_table(ds_tex, file.path(tab_dir, "dataset_summary_table.tex"),
+  paste(
+    "Analyzed datasets, Bioconductor repository resources, ExperimentHub accessions,",
+    "Space Ranger versions, and proportion of genes favoring the nonstationary spatial model.",
+    "EH9628 and EH9629 are the current replacements for the accessions used during analysis,",
+    "EH9516 and EH9517, respectively."
+  ),
+  "tab:dataset-summary", digits = 1, font_size = "scriptsize", resize = TRUE)
 
 mesh_tex <- mesh_summary[, c("dataset_name", "n_spots", "x_range", "y_range",
   "max_edge_inner", "max_edge_outer", "cutoff", "mesh_nodes")]
@@ -471,7 +720,7 @@ write_simple_table(mesh_tex, file.path(tab_dir, "inla_mesh_parameters_table.tex"
   "INLA SPDE mesh settings used for each dataset. The mesh was generated with max.edge = c(max range / 5, max range / 3) and cutoff = min range / 20.",
   "tab:mesh-parameters", digits = 1)
 
-if (nrow(curves)) {
+if (nrow(curves) > 0L) {
   key <- curves[curves$c_threshold %in% c(1, 3, 10, 30, 100), ]
   key <- key[order(key$dataset_name, key$c_threshold), c("dataset_name", "c_threshold", "fdr", "avg_power", "n_replicates", "n_genes", "n_h0", "n_h1")]
   names(key) <- c("Dataset", "c", "FDR", "Power", "Replicates", "Genes", "H0 genes", "H1 genes")
@@ -483,6 +732,10 @@ if (nrow(curves)) {
 gsea_path <- file.path(root, "results", "gsea_clusterprofiler.csv")
 if (file.exists(gsea_path)) {
   gsea <- read.csv(gsea_path, stringsAsFactors = FALSE)
+  dataset_column <- intersect(c("dataset_name", "dataset"), names(gsea))
+  if (length(dataset_column)) {
+    gsea <- gsea[gsea[[dataset_column[1]]] %in% analysis_datasets, , drop = FALSE]
+  }
   gsea <- gsea[!is.na(gsea$padj), ]
   gsea <- gsea[order(gsea$padj, -abs(gsea$NES)), ]
   gsea_top <- head(gsea[gsea$padj < 0.05, ], 20)
