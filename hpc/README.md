@@ -72,10 +72,14 @@ the dedicated dependency chain:
 bash hpc/launch_in_tissue_refit.sh
 ```
 
-This launches array tasks 11 and 12 with 32 gene-level workers each. A dependent
-job then validates and migrates only the metadata for the other ten datasets
-(whose source objects have no `in_tissue` field and therefore retain identical
-spots), validates all 12 schema-v4 files, and rebuilds the combined result.
+This launches a 32-element array: 16 round-robin gene chunks for DLPFC and 16
+for mouse coronal, interleaved so both datasets progress together. Each task
+uses four local gene workers, allowing up to 64 simultaneous fits per dataset
+when the full array runs. Every gene fit still uses the complete in-tissue spot
+set. A dependent job strictly validates and merges every chunk, migrates only
+the metadata for the other ten datasets (whose source objects have no
+`in_tissue` field and therefore retain identical spots), validates all 12
+schema-v4 files, and rebuilds the combined result.
 
 The full array order is version-controlled in `analysis_datasets.txt`; adding
 or removing files from the data directory does not shift task indices.
@@ -131,7 +135,10 @@ Rscript hpc/run_analysis.R [data_dir] [output_dir] [n_cores]
 
 With no `SLURM_ARRAY_TASK_ID`, all datasets are processed sequentially and the
 validated per-dataset results are also combined. In array mode the task ID
-selects one entry from `analysis_datasets.txt`.
+selects one entry from `analysis_datasets.txt`. The dedicated tissue-only
+workflow instead sets `ANALYSIS_DATASET_INDEX`, `GENE_CHUNK_ID`, and
+`GENE_CHUNK_COUNT` for each dataset/chunk pair and writes isolated files under
+`results/gene_chunks` until the dependent merge job succeeds.
 
 Set `OVERWRITE=1` to force a rerun. Without it, an existing output is reused
 only if it passes the strict completeness check against the filtered source

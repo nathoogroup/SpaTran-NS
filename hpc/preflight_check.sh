@@ -160,10 +160,13 @@ done
 
 for r_file in "$PROJECT_DIR/hpc/analysis_functions.R" \
               "$PROJECT_DIR/hpc/spot_selection.R" \
+              "$PROJECT_DIR/hpc/gene_chunks.R" \
+              "$PROJECT_DIR/hpc/merge_gene_chunks.R" \
               "$PROJECT_DIR/hpc/combine_results.R" \
               "$PROJECT_DIR/hpc/migrate_unannotated_results_to_schema4.R" \
               "$PROJECT_DIR/hpc/download_datasets.R" \
               "$PROJECT_DIR/hpc/run_analysis.R" \
+              "$PROJECT_DIR/hpc/test_merge_gene_chunks.R" \
               "$PROJECT_DIR/hpc/test_result_handling.R"; do
   if Rscript -e 'invisible(parse(file=commandArgs(TRUE)[1]))' "$r_file" \
       >/dev/null 2>&1; then
@@ -184,6 +187,18 @@ if Rscript "$PROJECT_DIR/hpc/test_spot_selection.R" \
   ok "In-tissue spot-selection regression test"
 else
   fail "In-tissue spot-selection regression test"
+fi
+
+if Rscript "$PROJECT_DIR/hpc/test_gene_chunks.R" >/dev/null 2>&1; then
+  ok "Gene-chunk partition regression test"
+else
+  fail "Gene-chunk partition regression test"
+fi
+
+if Rscript "$PROJECT_DIR/hpc/test_merge_gene_chunks.R" >/dev/null 2>&1; then
+  ok "Gene-chunk merge regression test"
+else
+  fail "Gene-chunk merge regression test"
 fi
 
 # ---- 8. Downloaded datasets and array mapping -------------------------------

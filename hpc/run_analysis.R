@@ -16,21 +16,50 @@
 #   n_cores    : parallel cores (default: all available)
 # =============================================================================
 
-# When run as a SLURM array job, SLURM_ARRAY_TASK_ID selects the dataset index.
-# When run directly, data_dir is processed sequentially (useful for testing).
+# In the general array workflow, SLURM_ARRAY_TASK_ID selects the dataset index.
+# A chunked workflow sets ANALYSIS_DATASET_INDEX explicitly because the SLURM
+# task ID identifies a dataset/chunk pair rather than a dataset alone.
 args       <- commandArgs(trailingOnly = TRUE)
 data_dir   <- if (length(args) >= 1) args[1] else "data/spatial_datasets"
 output_dir <- if (length(args) >= 2) args[2] else "results"
 n_cores    <- if (length(args) >= 3) as.integer(args[3]) else parallel::detectCores()
-task_id    <- suppressWarnings(as.integer(Sys.getenv("SLURM_ARRAY_TASK_ID", unset = "0")))
+slurm_array_task_id <- suppressWarnings(as.integer(
+  Sys.getenv("SLURM_ARRAY_TASK_ID", unset = "0")
+))
+dataset_index_override <- Sys.getenv("ANALYSIS_DATASET_INDEX", unset = "")
+task_id <- if (nzchar(dataset_index_override)) {
+  suppressWarnings(as.integer(dataset_index_override))
+} else {
+  slurm_array_task_id
+}
+gene_chunk_id <- suppressWarnings(as.integer(
+  Sys.getenv("GENE_CHUNK_ID", unset = "1")
+))
+gene_chunk_count <- suppressWarnings(as.integer(
+  Sys.getenv("GENE_CHUNK_COUNT", unset = "1")
+))
 overwrite  <- identical(Sys.getenv("OVERWRITE", unset = "0"), "1")
 spot_selection_policy <- "in_tissue_spots"
 
 if (is.na(n_cores) || n_cores < 1L) {
   stop("n_cores must be a positive integer", call. = FALSE)
 }
-if (is.na(task_id) || task_id < 0L) {
+if (is.na(slurm_array_task_id) || slurm_array_task_id < 0L) {
   stop("SLURM_ARRAY_TASK_ID must be a non-negative integer", call. = FALSE)
+}
+if (is.na(task_id) || task_id < 0L) {
+  stop("analysis dataset index must be a non-negative integer", call. = FALSE)
+}
+if (is.na(gene_chunk_count) || gene_chunk_count < 1L ||
+    is.na(gene_chunk_id) || gene_chunk_id < 1L ||
+    gene_chunk_id > gene_chunk_count) {
+  stop(
+    "GENE_CHUNK_ID and GENE_CHUNK_COUNT must define a valid positive chunk",
+    call. = FALSE
+  )
+}
+if (gene_chunk_count > 1L && task_id == 0L) {
+  stop("chunked analysis requires ANALYSIS_DATASET_INDEX", call. = FALSE)
 }
 
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
@@ -49,7 +78,9 @@ cat("Data directory:   ", data_dir, "\n")
 cat("Output directory: ", output_dir, "\n")
 cat("Cores:            ", n_cores, "\n")
 cat("Gene selection:    all expressed genes (after quality filter)\n")
-cat("SLURM array task: ", if (task_id > 0) task_id else "N/A (sequential mode)", "\n")
+cat("SLURM array task: ", if (slurm_array_task_id > 0) slurm_array_task_id else "N/A", "\n")
+cat("Dataset index:    ", if (task_id > 0) task_id else "N/A (sequential mode)", "\n")
+cat("Gene chunk:       ", gene_chunk_id, "of", gene_chunk_count, "\n")
 cat("Start time:       ", format(Sys.time()), "\n")
 cat("=============================================================\n\n")
 
@@ -69,6 +100,7 @@ suppressPackageStartupMessages({
 cat("Loading analysis functions...\n")
 source(file.path(script_dir, "analysis_functions.R"))
 source(file.path(script_dir, "spot_selection.R"))
+source(file.path(script_dir, "gene_chunks.R"))
 analysis_implementation_md5 <- fingerprint_analysis_implementation(script_dir)
 
 # Verify INLA
@@ -181,9 +213,20 @@ for (ds_idx in seq_along(dataset_files)) {
   cat("Dataset", ds_idx, "/", length(dataset_files), ":", ds_name, "\n")
   cat(rep("=", 60), "\n")
 
-  # Existing outputs are validated after filtering the source dataset.  A file
-  # is never skipped merely because it exists.
-  ds_out <- file.path(output_dir, paste0(ds_name, "_results.rds"))
+  # Existing outputs are validated after filtering the source dataset. A file
+  # is never skipped merely because it exists. Chunk tasks write isolated files
+  # that are validated and merged by merge_gene_chunks.R.
+  ds_out <- if (gene_chunk_count > 1L) {
+    chunk_output_dir <- Sys.getenv(
+      "GENE_CHUNK_OUTPUT_DIR",
+      unset = file.path(output_dir, "gene_chunks")
+    )
+    gene_chunk_result_path(
+      chunk_output_dir, ds_name, gene_chunk_id, gene_chunk_count
+    )
+  } else {
+    file.path(output_dir, paste0(ds_name, "_results.rds"))
+  }
 
   # ---- Load ----------------------------------------------------------------
   load_error <- NULL
@@ -243,8 +286,17 @@ for (ds_idx in seq_along(dataset_files)) {
     stop(problem, call. = FALSE)
   }
 
-  # All filtered genes
-  gene_indices <- seq_len(nrow(spe))
+  # Partition filtered genes round-robin so every array task receives a
+  # deterministic, disjoint subset while every individual fit still sees the
+  # complete in-tissue spot set.
+  n_genes_filtered <- nrow(spe)
+  gene_indices <- gene_chunk_indices(
+    n_genes_filtered, gene_chunk_id, gene_chunk_count
+  )
+  cat(sprintf(
+    "  Gene chunk %d/%d: %d of %d filtered genes\n",
+    gene_chunk_id, gene_chunk_count, length(gene_indices), n_genes_filtered
+  ))
 
   # ---- Coordinates and gene names ------------------------------------------
   coords <- as.data.frame(spatialCoords(spe))
@@ -265,6 +317,7 @@ for (ds_idx in seq_along(dataset_files)) {
   if (is.null(gene_names)) gene_names <- gene_ids
   missing_names <- is.na(gene_names) | !nzchar(gene_names)
   gene_names[missing_names] <- gene_ids[missing_names]
+  scheduled_gene_ids <- gene_ids[gene_indices]
 
   # A cached output is reusable only if it has the strict one-row-per-gene
   # schema and exactly matches this filtered dataset.  Legacy/partial outputs
@@ -323,10 +376,22 @@ for (ds_idx in seq_along(dataset_files)) {
           !identical(
             suppressWarnings(as.integer(cached_metadata$n_genes_analyzed)),
             length(gene_indices)
+          ) ||
+          !identical(
+            suppressWarnings(as.integer(cached_metadata$n_genes_filtered)),
+            n_genes_filtered
+          ) ||
+          !identical(
+            suppressWarnings(as.integer(cached_metadata$gene_chunk_id)),
+            gene_chunk_id
+          ) ||
+          !identical(
+            suppressWarnings(as.integer(cached_metadata$gene_chunk_count)),
+            gene_chunk_count
           )) {
         list(valid = FALSE, message = "missing or inconsistent schema-v4 completion metadata")
       } else {
-        validate_gene_results(cached, gene_indices, gene_ids)
+        validate_gene_results(cached, gene_indices, scheduled_gene_ids)
       }
     }
 
@@ -387,7 +452,7 @@ for (ds_idx in seq_along(dataset_files)) {
 
   # ---- Save dataset results ------------------------------------------------
   results_df <- dplyr::bind_rows(results_list)
-  assert_complete_gene_results(results_df, gene_indices, gene_ids)
+  assert_complete_gene_results(results_df, gene_indices, scheduled_gene_ids)
 
   n_ok       <- sum(!is.na(results_df$log_bayes_factor))
   n_failed   <- sum(!is.na(results_df$error_message))
@@ -414,7 +479,10 @@ for (ds_idx in seq_along(dataset_files)) {
     dataset_file       = basename(ds_file),
     source_rds_md5     = source_rds_md5,
     n_genes_analyzed   = length(gene_indices),
+    n_genes_filtered   = n_genes_filtered,
     n_genes_total      = n_genes_total,
+    gene_chunk_id      = gene_chunk_id,
+    gene_chunk_count   = gene_chunk_count,
     n_spots            = n_spots,
     n_spots_supplied   = n_spots_supplied,
     n_spots_removed    = n_spots_removed,
@@ -445,14 +513,22 @@ for (ds_idx in seq_along(dataset_files)) {
 if (length(all_results) == 0L) {
   stop("No datasets produced valid results", call. = FALSE)
 }
-if (task_id == 0L && !identical(names(all_results), dataset_names)) {
+if (task_id == 0L && gene_chunk_count == 1L &&
+    !identical(names(all_results), dataset_names)) {
   stop("Sequential analysis did not produce every listed dataset", call. = FALSE)
 }
 
 if (task_id > 0L) {
   # Array tasks share output_dir, so they must never race to overwrite a common
   # all_results_combined file.  Combine only after the entire array succeeds.
-  cat("\nArray mode: per-dataset result complete.\n")
+  if (gene_chunk_count > 1L) {
+    cat(sprintf(
+      "\nArray mode: dataset gene chunk %d/%d complete.\n",
+      gene_chunk_id, gene_chunk_count
+    ))
+  } else {
+    cat("\nArray mode: per-dataset result complete.\n")
+  }
   cat("Shared combined outputs were not written by this array task.\n")
 } else {
   # ---- Combine and save all results ----------------------------------------

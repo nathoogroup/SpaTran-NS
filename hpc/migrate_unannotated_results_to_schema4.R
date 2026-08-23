@@ -28,6 +28,11 @@ legacy_implementation_md5 <- c(
   "analysis_functions.R" = "72c1620d5b29f26f8fcd93060f6a13e8",
   "run_analysis.R" = "8353bd7dab128333f7af131275067dfb"
 )
+prior_schema4_implementation_md5 <- c(
+  "analysis_functions.R" = "f8d3a5b7a37adaffa49bfacb92757fe8",
+  "spot_selection.R" = "01f0a1b19dfdb1cac4a7e0dd6ea27b3a",
+  "run_analysis.R" = "8541bdb3c357719d0163fbfb29fe34c5"
+)
 current_implementation_md5 <- fingerprint_analysis_implementation(script_dir)
 
 dataset_list_file <- Sys.getenv(
@@ -56,18 +61,43 @@ for (dataset_name in dataset_names) {
 
   result <- readRDS(result_path)
   metadata <- attr(result, "analysis_metadata")
-  if (!is.list(metadata) ||
-      !isTRUE(metadata$complete) ||
-      !identical(suppressWarnings(as.integer(metadata$schema_version)), 3L) ||
-      !identical(
-        as.character(metadata$spot_selection),
-        "all_bioconductor_supplied_spots"
-      ) ||
-      !analysis_implementation_matches(
-        metadata$analysis_implementation_md5,
-        legacy_implementation_md5
-      )) {
-    stop(dataset_name, " is not an approved schema-v3 result", call. = FALSE)
+  schema_version <- if (is.list(metadata) &&
+                        length(metadata$schema_version) == 1L) {
+    suppressWarnings(as.integer(metadata$schema_version))
+  } else {
+    NA_integer_
+  }
+  is_current <- is.list(metadata) &&
+    isTRUE(metadata$complete) &&
+    identical(schema_version, analysis_schema_version) &&
+    identical(as.character(metadata$spot_selection), "in_tissue_spots") &&
+    analysis_implementation_matches(
+      metadata$analysis_implementation_md5,
+      current_implementation_md5
+    )
+  is_approved_input <- is.list(metadata) && isTRUE(metadata$complete) && (
+    (
+      identical(schema_version, 3L) &&
+        identical(
+          as.character(metadata$spot_selection),
+          "all_bioconductor_supplied_spots"
+        ) &&
+        analysis_implementation_matches(
+          metadata$analysis_implementation_md5,
+          legacy_implementation_md5
+        )
+    ) ||
+      (
+        identical(schema_version, 4L) &&
+          identical(as.character(metadata$spot_selection), "in_tissue_spots") &&
+          analysis_implementation_matches(
+            metadata$analysis_implementation_md5,
+            prior_schema4_implementation_md5
+          )
+      )
+  )
+  if (!is_current && !is_approved_input) {
+    stop(dataset_name, " is not an approved migration input", call. = FALSE)
   }
 
   source_md5 <- unname(as.character(tools::md5sum(data_path)))
@@ -96,6 +126,23 @@ for (dataset_name in dataset_names) {
   check <- validate_gene_results(result, seq_len(nrow(result)))
   if (!check$valid) {
     stop(dataset_name, " failed result validation: ", check$message, call. = FALSE)
+  }
+
+  if (is_current) {
+    expected_supplied <- as.integer(selection$n_spots_supplied)
+    if (!identical(
+          suppressWarnings(as.integer(metadata$n_spots_supplied)),
+          expected_supplied
+        ) ||
+        !identical(suppressWarnings(as.integer(metadata$n_spots_removed)), 0L) ||
+        !identical(isTRUE(metadata$in_tissue_annotation), FALSE) ||
+        !all(c(
+          "n_spots_supplied", "n_spots_removed", "in_tissue_annotation"
+        ) %in% names(result))) {
+      stop(dataset_name, " has incomplete current metadata", call. = FALSE)
+    }
+    cat("Already current: ", dataset_name, "\n", sep = "")
+    next
   }
 
   result$n_spots_supplied <- as.integer(selection$n_spots_supplied)
