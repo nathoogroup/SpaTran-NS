@@ -35,6 +35,18 @@ detrend_expression <- function(coords, expr) {
   list(detrended = expr - predict(poly_fit))
 }
 
+# Restrict displayed expression and normalization to captured tissue spots.
+# Datasets without an in_tissue annotation are already tissue-only and are
+# left unchanged.
+keep_in_tissue <- function(spe) {
+  if (!"in_tissue" %in% colnames(colData(spe))) return(spe)
+  mask <- tolower(as.character(colData(spe)$in_tissue)) %in%
+    c("1", "true", "t", "yes")
+  if (!any(mask)) stop("in_tissue annotation contains no tissue spots")
+  cat(sprintf("  Tissue spots: %d/%d\n", sum(mask), length(mask)))
+  spe[, mask]
+}
+
 # --- Pick representative gene (excluding already-used symbols) ---
 pick_gene <- function(res, category, exclude = character(0)) {
   if (category == "nonstationary") {
@@ -116,7 +128,7 @@ process_dataset <- function(ds_name, spe_file, results_file) {
              stationary_nonspatial = g_snp)
   cat("  Genes:", paste(names(genes), genes, sep = "=", collapse = ", "), "\n")
 
-  spe <- readRDS(spe_file)
+  spe <- keep_in_tissue(readRDS(spe_file))
   rd  <- rowData(spe)
   g_names <- if ("symbol"    %in% colnames(rd)) as.character(rd$symbol)
              else if ("gene_name" %in% colnames(rd)) as.character(rd$gene_name)

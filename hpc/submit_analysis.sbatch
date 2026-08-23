@@ -2,7 +2,7 @@
 #SBATCH --job-name=spatran_ns
 #SBATCH --output=logs/spatran_ns_%A_%a.out
 #SBATCH --error=logs/spatran_ns_%A_%a.err
-#SBATCH --time=12:00:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
