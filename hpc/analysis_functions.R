@@ -413,8 +413,10 @@ analyze_gene_safe <- function(gene_idx, counts_mat, coords, gene_names,
 
 # --- Result integrity and atomic persistence ---------------------------------
 
-analysis_schema_version <- 3L
-analysis_implementation_files <- c("analysis_functions.R", "run_analysis.R")
+analysis_schema_version <- 4L
+analysis_implementation_files <- c(
+  "analysis_functions.R", "spot_selection.R", "run_analysis.R"
+)
 
 analysis_result_numeric_columns <- c(
   "sigma_b_sq_stationary", "sigma_eps_sq_stationary", "range_stationary",

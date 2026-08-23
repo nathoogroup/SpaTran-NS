@@ -11,7 +11,7 @@ MouseBrainSagittalAnterior
 MouseBrainSagittalPosterior
 MouseKidneyCoronal
 Visium_humanDLPFC
-# Analyze each Bioconductor object as supplied, without extra spot filtering.
-# Keep Visium_mouseCoronal and exclude the separate tissue-only
-# MouseBrainCoronal representation of the same section.
+# Retain in_tissue == 1 when the annotation is present. Objects without that
+# annotation are treated as already tissue-restricted. Keep Visium_mouseCoronal
+# and exclude the duplicate MouseBrainCoronal representation of the same section.
 Visium_mouseCoronal

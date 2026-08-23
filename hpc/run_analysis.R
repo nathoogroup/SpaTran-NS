@@ -24,7 +24,7 @@ output_dir <- if (length(args) >= 2) args[2] else "results"
 n_cores    <- if (length(args) >= 3) as.integer(args[3]) else parallel::detectCores()
 task_id    <- suppressWarnings(as.integer(Sys.getenv("SLURM_ARRAY_TASK_ID", unset = "0")))
 overwrite  <- identical(Sys.getenv("OVERWRITE", unset = "0"), "1")
-spot_selection_policy <- "all_bioconductor_supplied_spots"
+spot_selection_policy <- "in_tissue_spots"
 
 if (is.na(n_cores) || n_cores < 1L) {
   stop("n_cores must be a positive integer", call. = FALSE)
@@ -68,6 +68,7 @@ suppressPackageStartupMessages({
 # Source analysis functions
 cat("Loading analysis functions...\n")
 source(file.path(script_dir, "analysis_functions.R"))
+source(file.path(script_dir, "spot_selection.R"))
 analysis_implementation_md5 <- fingerprint_analysis_implementation(script_dir)
 
 # Verify INLA
@@ -200,9 +201,16 @@ for (ds_idx in seq_along(dataset_files)) {
   }
 
   n_genes_total <- nrow(spe)
-  n_spots       <- ncol(spe)
-  cat(sprintf("  Genes: %d, Spots: %d\n", n_genes_total, n_spots))
-  cat("  Spot selection: all spots supplied in the Bioconductor object\n")
+  spe <- select_in_tissue_spots(spe, dataset_name = ds_name)
+  spot_selection <- attr(spe, "spot_selection")
+  n_spots_supplied <- spot_selection$n_spots_supplied
+  n_spots_removed <- spot_selection$n_spots_removed
+  in_tissue_annotation <- spot_selection$annotation_present
+  n_spots <- ncol(spe)
+  cat(sprintf(
+    "  Genes: %d, Spots analyzed: %d (supplied: %d)\n",
+    n_genes_total, n_spots, n_spots_supplied
+  ))
 
   # ---- Extract counts (once, with error handling for HDF5-backed objects) --
   # Some datasets (e.g. Janesick) are stored as HDF5-backed DelayedArrays;
@@ -297,6 +305,18 @@ for (ds_idx in seq_along(dataset_files)) {
             n_spots
           ) ||
           !identical(
+            suppressWarnings(as.integer(cached_metadata$n_spots_supplied)),
+            n_spots_supplied
+          ) ||
+          !identical(
+            suppressWarnings(as.integer(cached_metadata$n_spots_removed)),
+            n_spots_removed
+          ) ||
+          !identical(
+            isTRUE(cached_metadata$in_tissue_annotation),
+            isTRUE(in_tissue_annotation)
+          ) ||
+          !identical(
             suppressWarnings(as.integer(cached_metadata$n_genes_total)),
             n_genes_total
           ) ||
@@ -304,7 +324,7 @@ for (ds_idx in seq_along(dataset_files)) {
             suppressWarnings(as.integer(cached_metadata$n_genes_analyzed)),
             length(gene_indices)
           )) {
-        list(valid = FALSE, message = "missing or inconsistent schema-v3 completion metadata")
+        list(valid = FALSE, message = "missing or inconsistent schema-v4 completion metadata")
       } else {
         validate_gene_results(cached, gene_indices, gene_ids)
       }
@@ -382,6 +402,9 @@ for (ds_idx in seq_along(dataset_files)) {
   results_df$dataset_name  <- ds_name
   results_df$dataset_file  <- basename(ds_file)
   results_df$n_spots       <- n_spots
+  results_df$n_spots_supplied <- n_spots_supplied
+  results_df$n_spots_removed <- n_spots_removed
+  results_df$in_tissue_annotation <- in_tissue_annotation
   results_df$n_genes_total <- n_genes_total
   attr(results_df, "analysis_metadata") <- list(
     schema_version     = analysis_schema_version,
@@ -393,6 +416,9 @@ for (ds_idx in seq_along(dataset_files)) {
     n_genes_analyzed   = length(gene_indices),
     n_genes_total      = n_genes_total,
     n_spots            = n_spots,
+    n_spots_supplied   = n_spots_supplied,
+    n_spots_removed    = n_spots_removed,
+    in_tissue_annotation = in_tissue_annotation,
     spot_selection     = spot_selection_policy,
     completed_at       = format(Sys.time(), tz = "UTC", usetz = TRUE)
   )

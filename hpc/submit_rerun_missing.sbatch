@@ -7,21 +7,20 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=192G
-#SBATCH --array=2,16,17
+#SBATCH --array=11,12
 #SBATCH --account=def-nathoo
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=pvelidi@uvic.ca
 
 # =============================================================================
-# Rerun script for 3 datasets missing fitted theta columns:
-#   task  2 = HumanBreastCancerILC   (~16564 genes)
-#   task 16 = Visium_humanDLPFC      (~14922 genes)
-#   task 17 = Visium_mouseCoronal    (~16204 genes)
+# Targeted retry for datasets with explicit in_tissue annotations:
+#   task 11 = Visium_humanDLPFC   (3,639 in-tissue spots)
+#   task 12 = Visium_mouseCoronal (2,702 in-tissue spots)
 #
 # Uses 32 cores (vs 8 in original) to scale runtime from ~12h to ~3h.
 # 5h walltime gives ~2h buffer.  OVERWRITE=1 forces replacement of stale files.
 #
-# Submit with:
+# Direct retry command (the dedicated launcher also schedules finalization):
 #   sbatch hpc/submit_rerun_missing.sbatch
 # =============================================================================
 
