@@ -49,7 +49,6 @@ suppressPackageStartupMessages({
 })
 
 source(file.path(script_dir, "analysis_functions.R"))
-source(file.path(script_dir, "spot_selection.R"))
 
 # Build dataset list from existing results files — ensures we only process
 # datasets that were actually analysed and skips any data files without results.
@@ -155,7 +154,6 @@ for (ds_file in dataset_files) {
   if (is.null(spe) || !inherits(spe, "SpatialExperiment")) {
     cat("  Skipping (not a SpatialExperiment)\n"); next
   }
-  spe <- select_in_tissue_spots(spe, dataset_name = ds_name)
 
   counts_mat <- tryCatch(counts(spe), error = function(e) {
     cat("  ERROR reading counts:", e$message, "\n"); NULL

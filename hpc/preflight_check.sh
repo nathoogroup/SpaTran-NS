@@ -147,9 +147,6 @@ for shell_file in "$PROJECT_DIR/hpc/preflight_check.sh" \
                   "$PROJECT_DIR/hpc/install_inla.sh" \
                   "$PROJECT_DIR/hpc/submit_download.sbatch" \
                   "$PROJECT_DIR/hpc/submit_analysis.sbatch" \
-                  "$PROJECT_DIR/hpc/submit_in_tissue_refit.sbatch" \
-                  "$PROJECT_DIR/hpc/finalize_in_tissue_refit.sbatch" \
-                  "$PROJECT_DIR/hpc/launch_in_tissue_refit.sh" \
                   "$PROJECT_DIR/hpc/submit_combine.sbatch"; do
   if bash -n "$shell_file"; then
     ok "Shell syntax: $(basename "$shell_file")"
@@ -159,9 +156,7 @@ for shell_file in "$PROJECT_DIR/hpc/preflight_check.sh" \
 done
 
 for r_file in "$PROJECT_DIR/hpc/analysis_functions.R" \
-              "$PROJECT_DIR/hpc/spot_selection.R" \
               "$PROJECT_DIR/hpc/combine_results.R" \
-              "$PROJECT_DIR/hpc/migrate_unannotated_results_to_schema4.R" \
               "$PROJECT_DIR/hpc/download_datasets.R" \
               "$PROJECT_DIR/hpc/run_analysis.R" \
               "$PROJECT_DIR/hpc/test_result_handling.R"; do
@@ -177,13 +172,6 @@ if Rscript "$PROJECT_DIR/hpc/test_result_handling.R" >/dev/null 2>&1; then
   ok "Per-gene failure/completeness regression test"
 else
   fail "Per-gene failure/completeness regression test"
-fi
-
-if Rscript "$PROJECT_DIR/hpc/test_spot_selection.R" \
-    "$PROJECT_DIR/data/spatial_datasets" >/dev/null 2>&1; then
-  ok "In-tissue spot-selection regression test"
-else
-  fail "In-tissue spot-selection regression test"
 fi
 
 # ---- 8. Downloaded datasets and array mapping -------------------------------

@@ -30,7 +30,6 @@ suppressPackageStartupMessages({
 })
 
 source(file.path(PROJECT, "hpc", "analysis_functions.R"))
-source(file.path(PROJECT, "hpc", "spot_selection.R"))
 
 # ---- Verify INLA ------------------------------------------------------------
 cat("Checking INLA... ")
@@ -47,9 +46,7 @@ if (length(rds_files) == 0) stop("No datasets in ", data_dir)
 ds_file <- rds_files[1]
 cat("Dataset:", basename(ds_file), "\n")
 spe <- readRDS(ds_file)
-cat(sprintf("Supplied dimensions: %d genes x %d spots\n", nrow(spe), ncol(spe)))
-spe <- select_in_tissue_spots(spe, dataset_name = tools::file_path_sans_ext(basename(ds_file)))
-cat(sprintf("Analysis dimensions: %d genes x %d in-tissue spots\n\n", nrow(spe), ncol(spe)))
+cat(sprintf("Dimensions: %d genes x %d spots\n\n", nrow(spe), ncol(spe)))
 
 # ---- Filter -----------------------------------------------------------------
 counts_mat <- counts(spe)

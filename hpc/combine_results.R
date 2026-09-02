@@ -22,8 +22,7 @@ script_dir <- if (length(script_flag) > 0L) {
 
 suppressPackageStartupMessages(library(dplyr))
 source(file.path(script_dir, "analysis_functions.R"))
-source(file.path(script_dir, "spot_selection.R"))
-spot_selection_policy <- "in_tissue_spots"
+spot_selection_policy <- "all_bioconductor_supplied_spots"
 analysis_implementation_md5 <- fingerprint_analysis_implementation(script_dir)
 
 dataset_list_file <- Sys.getenv(
@@ -90,8 +89,6 @@ all_results <- lapply(result_files, function(path) {
   n_genes_analyzed <- metadata_integer("n_genes_analyzed")
   n_genes_total <- metadata_integer("n_genes_total")
   n_spots <- metadata_integer("n_spots")
-  n_spots_supplied <- metadata_integer("n_spots_supplied")
-  n_spots_removed <- metadata_integer("n_spots_removed")
 
   if (!is.list(metadata) ||
       !isTRUE(metadata$complete) ||
@@ -107,11 +104,6 @@ all_results <- lapply(result_files, function(path) {
       n_genes_total < n_genes_analyzed ||
       is.na(n_spots) ||
       n_spots < 1L ||
-      is.na(n_spots_supplied) ||
-      n_spots_supplied < n_spots ||
-      is.na(n_spots_removed) ||
-      n_spots_removed != n_spots_supplied - n_spots ||
-      length(metadata$in_tissue_annotation) != 1L ||
       length(metadata$source_rds_md5) != 1L ||
       !grepl("^[0-9a-fA-F]{32}$", as.character(metadata$source_rds_md5)) ||
       !identical(as.character(metadata$spot_selection), spot_selection_policy)) {
@@ -129,8 +121,7 @@ all_results <- lapply(result_files, function(path) {
   }
 
   required_dataset_columns <- c(
-    "dataset_name", "dataset_file", "n_spots", "n_spots_supplied",
-    "n_spots_removed", "in_tissue_annotation", "n_genes_total"
+    "dataset_name", "dataset_file", "n_spots", "n_genes_total"
   )
   missing_dataset_columns <- setdiff(required_dataset_columns, names(result))
   if (length(missing_dataset_columns) > 0L) {
@@ -145,13 +136,6 @@ all_results <- lapply(result_files, function(path) {
   dataset_names <- unique(as.character(result$dataset_name))
   dataset_files <- unique(as.character(result$dataset_file))
   result_spot_counts <- unique(suppressWarnings(as.integer(result$n_spots)))
-  result_supplied_spot_counts <- unique(
-    suppressWarnings(as.integer(result$n_spots_supplied))
-  )
-  result_removed_spot_counts <- unique(
-    suppressWarnings(as.integer(result$n_spots_removed))
-  )
-  result_annotation_flags <- unique(as.logical(result$in_tissue_annotation))
   result_gene_counts <- unique(suppressWarnings(as.integer(result$n_genes_total)))
   if (length(dataset_names) != 1L ||
       !identical(dataset_names, as.character(metadata$dataset_name)) ||
@@ -161,18 +145,6 @@ all_results <- lapply(result_files, function(path) {
       length(result_spot_counts) != 1L ||
       is.na(result_spot_counts) ||
       !identical(result_spot_counts, n_spots) ||
-      length(result_supplied_spot_counts) != 1L ||
-      is.na(result_supplied_spot_counts) ||
-      !identical(result_supplied_spot_counts, n_spots_supplied) ||
-      length(result_removed_spot_counts) != 1L ||
-      is.na(result_removed_spot_counts) ||
-      !identical(result_removed_spot_counts, n_spots_removed) ||
-      length(result_annotation_flags) != 1L ||
-      is.na(result_annotation_flags) ||
-      !identical(
-        result_annotation_flags,
-        as.logical(metadata$in_tissue_annotation)
-      ) ||
       length(result_gene_counts) != 1L ||
       is.na(result_gene_counts) ||
       !identical(result_gene_counts, n_genes_total)) {

@@ -35,9 +35,9 @@ set -euo pipefail
 #   mkdir -p logs
 #   sbatch hpc/submit_analysis.sbatch
 #
-# The schema-v4 in-tissue policy requires one full 1-12 refresh with OVERWRITE=1.
+# This schema-v3 update requires one full 1-12 refresh with OVERWRITE=1.
 # Indices 3,5,8 identify the historically truncated datasets and are useful
-# only for targeted retries after a complete schema-v4 result set exists.
+# only for targeted retries after a complete schema-v3 result set exists.
 # =============================================================================
 
 echo "=========================================="

@@ -7,15 +7,16 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=256G
-#SBATCH --array=11,12
+#SBATCH --array=2,16,17
 #SBATCH --account=def-nathoo
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=pvelidi@uvic.ca
 
 # =============================================================================
-# Targeted retry for the two datasets with explicit in_tissue annotations:
-#   task 11 = Visium_humanDLPFC       (3,639 in-tissue spots)
-#   task 12 = Visium_mouseCoronal     (2,702 in-tissue spots)
+# Second rerun for 3 datasets that timed out in previous attempts:
+#   task  2 = HumanBreastCancerILC    (16564 genes, 4325 spots, mesh 313)
+#   task 16 = Visium_humanDLPFC       (14922 genes, 4992 spots, mesh 340)
+#   task 17 = Visium_mouseCoronal     (16204 genes, 4992 spots, mesh 342)
 #
 # Key changes vs prior reruns:
 #   - Per-gene 120s wall-clock timeout in analyze_gene_safe() prevents stuck
@@ -28,10 +29,10 @@
 #
 # Runtime estimates at 32 cores (from completed datasets, similar spot counts):
 #   ILC  (4325 spots): ~2h    — similar to HumanHeart (419 min / 8 cores)
-#   DLPFC (3,639 spots): ~2h
-#   mCor (2,702 spots):  ~1–2h
+#   DLPFC(4992 spots): ~2–3h
+#   mCor (4992 spots): ~2–3h
 #
-# Direct retry command (the dedicated launcher also schedules finalization):
+# Submit with:
 #   sbatch hpc/submit_rerun2.sbatch
 # =============================================================================
 
