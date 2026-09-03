@@ -58,8 +58,8 @@ module load StdEnv/2023 gcc/12.3 boost/1.85.0 r/4.4.0 geos/3.12.0 gdal/3.9.1 udu
 # Set R library path (must match install_inla.sh)
 export R_LIBS="$HOME/R/x86_64-pc-linux-gnu-library/${EBVERSIONR:0:3}"
 
-DATA_DIR="data/spatial_datasets"
-OUTPUT_DIR="results"
+DATA_DIR="${DATA_DIR:-data/spatial_datasets}"
+OUTPUT_DIR="${OUTPUT_DIR:-results}"
 N_CORES="${SLURM_CPUS_PER_TASK}"
 
 mkdir -p "$OUTPUT_DIR"
