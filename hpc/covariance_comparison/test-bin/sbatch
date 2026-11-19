@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Test fixture only; never invokes the real scheduler.
+set -euo pipefail
+: "${CC_TEST_LOG:?This mock is only for test_submit.sh}"
+call=1
+if [[ -f "$CC_TEST_LOG" ]]; then
+  while IFS= read -r line; do call=$((call+1)); done < "$CC_TEST_LOG"
+fi
+printf '%s\n' "$*" >> "$CC_TEST_LOG"
+if [[ ${CC_TEST_FAIL_CALL:-0} == "$call" ]]; then
+  echo "Mock scheduler failure" >&2
+  exit 1
+fi
+printf '%s;test-cluster\n' "$((9000+call))"

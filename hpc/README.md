@@ -1,5 +1,12 @@
 # HPC workflow for the spatial nonstationarity analysis
 
+For the new **separate nonstationarity and anisotropy comparisons against a
+stationary isotropic baseline**, use
+[`covariance_comparison/README.md`](covariance_comparison/README.md). That
+workflow filters annotated in-tissue spots, separates serial sections, and
+parallelizes gene chunks with Slurm arrays. It writes isolated outputs and
+does not overwrite the legacy results described below.
+
 These scripts run one SLURM array task per study dataset, retain an explicit
 row for every attempted gene, and combine results only after every dataset job
 has completed successfully.
